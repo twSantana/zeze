@@ -61,6 +61,7 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
   const [loadingCep, setLoadingCep] = useState(false);
   const [cepFeedback, setCepFeedback] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [selectedFiles, setSelectedFiles] = useState([]);
 
   useEffect(() => {
     if (propertyToEdit) {
@@ -174,14 +175,27 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
     if (!formData.area_m2) missingFields.push('Área');
     if (!formData.bairro) missingFields.push('Bairro');
     if (!formData.endereco) missingFields.push('Endereço');
-    if (!formData.imagem_url) missingFields.push('URL da imagem');
+    if (!formData.imagem_url && selectedFiles.length === 0) missingFields.push('Imagem de capa (URL ou upload)');
 
     if (missingFields.length > 0) {
       setErrorMsg(`Preencha os campos obrigatórios: ${missingFields.join(', ')}.`);
       return;
     }
 
-    onSave(formData);
+    // Pass selectedFiles to parent for upload handling
+    onSave({ ...formData, images: selectedFiles });
+  };
+
+  const handleFilesSelected = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    // Limit to 10 images to avoid abuse
+    const combined = [...selectedFiles, ...files].slice(0, 10);
+    setSelectedFiles(combined);
+  };
+
+  const removeSelected = (index) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -320,6 +334,29 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
                 className="w-full text-xs border border-slate-200 dark:border-slate-850 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-105 bg-white dark:bg-slate-950/50 focus:outline-none"
                 required
               />
+            </div>
+
+            {/* Upload de múltiplas imagens */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Fotos do Empreendimento (upload)</label>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFilesSelected}
+                className="text-xs"
+              />
+
+              {selectedFiles.length > 0 && (
+                <div className="mt-2 flex gap-2 overflow-x-auto">
+                  {selectedFiles.map((f, idx) => (
+                    <div key={idx} className="w-24 h-24 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 relative">
+                      <img src={URL.createObjectURL(f)} alt={f.name} className="w-full h-full object-cover" />
+                      <button type="button" onClick={() => removeSelected(idx)} className="absolute top-1 right-1 p-1 bg-white/80 rounded-full text-red-600">✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Novo Campo: Link para o Conteúdo */}

@@ -237,3 +237,22 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- =========================================================================
+-- Tabela para imagens de propriedades
+-- Cada imagem é armazenada no Storage do Supabase e referenciada aqui
+-- =========================================================================
+CREATE TABLE IF NOT EXISTS public.property_images (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    property_id UUID NOT NULL REFERENCES public.empreendimentos(id) ON DELETE CASCADE,
+    bucket VARCHAR(255) NOT NULL DEFAULT 'property-images',
+    path TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    url TEXT NOT NULL,
+    width INT,
+    height INT,
+    "order" INT DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_property_images_property_id ON public.property_images(property_id);

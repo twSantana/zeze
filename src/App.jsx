@@ -6,7 +6,7 @@ import BottomSheet from './components/BottomSheet';
 import LoginScreen from './components/LoginScreen';
 import AdminModal from './components/AdminModal';
 import LeadModal from './components/LeadModal';
-import { getPropertiesBbox, addProperty, updateProperty, deleteProperty } from './services/propertyService';
+import { getPropertiesBbox, addProperty, updateProperty, deleteProperty, uploadPropertyImages } from './services/propertyService';
 import { Building, Plus } from 'lucide-react';
 
 function AppContent({ theme, onThemeToggle }) {
@@ -166,10 +166,34 @@ function AppContent({ theme, onThemeToggle }) {
         setRawProperties(prev => 
           prev.map(p => p.id === propertyToEdit.id ? { ...p, ...updated } : p)
         );
+
+        // Handle uploaded images when editing
+        if (formData.images && formData.images.length > 0) {
+          const uploaded = await uploadPropertyImages(formData.images, propertyToEdit.id);
+          if (uploaded && uploaded.length > 0) {
+            const first = uploaded[0];
+            // update cover image url
+            const updatedWithCover = await updateProperty(propertyToEdit.id, { ...formData, imagem_url: first.url });
+            setRawProperties(prev => prev.map(p => p.id === propertyToEdit.id ? { ...p, ...updatedWithCover } : p));
+          }
+        }
       } else {
         const created = await addProperty(formData, user);
         setRawProperties(prev => [created, ...prev]);
-        handlePropertyFocus(created);
+        // If there are images selected, upload them and set cover
+        if (formData.images && formData.images.length > 0) {
+          const uploaded = await uploadPropertyImages(formData.images, created.id);
+          if (uploaded && uploaded.length > 0) {
+            const first = uploaded[0];
+            const updatedWithCover = await updateProperty(created.id, { ...formData, imagem_url: first.url });
+            setRawProperties(prev => prev.map(p => p.id === created.id ? { ...p, ...updatedWithCover } : p));
+            handlePropertyFocus(updatedWithCover);
+          } else {
+            handlePropertyFocus(created);
+          }
+        } else {
+          handlePropertyFocus(created);
+        }
       }
       setIsAdminOpen(false);
       setPropertyToEdit(null);

@@ -132,3 +132,91 @@ export async function deleteProperty(id) {
 
   return true;
 }
+
+// ======================
+// Imagens de Propriedade
+// ======================
+
+export async function getPropertyImages(propertyId) {
+  assertSupabaseConfigured();
+  const { data, error } = await supabase
+    .from('property_images')
+    .select('*')
+    .eq('property_id', propertyId)
+    .order('"order"', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function uploadPropertyImage(file, propertyId, options = {}) {
+  assertSupabaseConfigured();
+  if (!file) throw new Error('Arquivo inválido para upload.');
+  if (!propertyId) throw new Error('propertyId é obrigatório para associar a imagem.');
+
+  const bucket = options.bucket || 'property-images';
+  const timestamp = Date.now();
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const path = `properties/${propertyId}/${timestamp}_${safeName}`;
+
+  const { data: uploadData, error: uploadError } = await supabase.storage
+    .from(bucket)
+    .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
+
+  if (uploadError) throw uploadError;
+
+  const { data: urlData } = await supabase.storage.from(bucket).getPublicUrl(path);
+  const publicUrl = urlData?.publicUrl || '';
+
+  // Optional: try to read image dimensions in metadata if provided by client
+  const meta = options.meta || {};
+
+  const { data: insertData, error: insertError } = await supabase
+    .from('property_images')
+    .insert([{
+      property_id: propertyId,
+      bucket,
+      path,
+      filename: safeName,
+      url: publicUrl,
+      width: meta.width || null,
+      height: meta.height || null,
+      "order": meta.order || 0
+    }])
+    .select();
+
+  if (insertError) {
+    // rollback: delete uploaded file
+    try {
+      await supabase.storage.from(bucket).remove([path]);
+    } catch (e) {
+      // ignore
+    }
+    throw insertError;
+  }
+
+  return insertData && insertData[0] ? insertData[0] : null;
+}
+
+export async function uploadPropertyImages(files, propertyId, options = {}) {
+  if (!Array.isArray(files)) files = [files];
+  const results = [];
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    try {
+      const inserted = await uploadPropertyImage(file, propertyId, { ...options, meta: { order: i } });
+      results.push(inserted);
+    } catch (err) {
+      console.error('Erro ao enviar imagem:', err);
+      // continue with others
+    }
+  }
+  return results;
+}
+
+export async function deletePropertyImageByPath(bucket, path) {
+  assertSupabaseConfigured();
+  const { error } = await supabase.storage.from(bucket).remove([path]);
+  if (error) throw error;
+  return true;
+}
