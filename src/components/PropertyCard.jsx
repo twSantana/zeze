@@ -1,5 +1,5 @@
 import React from 'react';
-import { BedDouble, Car, Maximize, MapPin, Edit3, Trash2, MessageSquare } from 'lucide-react';
+import { BedDouble, Car, Maximize, MapPin, Edit3, Trash2, MessageSquare, Home, Building, Star } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function PropertyCard({ 
@@ -37,12 +37,39 @@ export default function PropertyCard({
     }
   };
 
+  const formatQuartos = () => {
+    if (property.quartos_max && property.quartos_max > property.quartos) {
+      return `${property.quartos} a ${property.quartos_max} Qrt`;
+    }
+    return `${property.quartos} Qrt`;
+  };
+
+  const formatVagas = () => {
+    if (property.vagas_max && property.vagas_max > property.vagas) {
+      return `${property.vagas} a ${property.vagas_max} Vag`;
+    }
+    return `${property.vagas} Vag`;
+  };
+
+  const formatArea = () => {
+    const areaMin = Math.round(property.area_m2);
+    const areaMax = property.area_max_m2 ? Math.round(property.area_max_m2) : 0;
+    if (areaMax && areaMax > areaMin) {
+      return `${areaMin} a ${areaMax} m²`;
+    }
+    return `${areaMin} m²`;
+  };
+
   return (
     <div 
       className={`group relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border transition-all duration-300 flex flex-col cursor-pointer ${
-        isActive 
-          ? 'border-emerald-500 shadow-lg shadow-emerald-500/5 -translate-y-1 ring-1 ring-emerald-500/50' 
-          : 'border-slate-100 dark:border-slate-800/80 hover:border-slate-200 dark:hover:border-slate-700 hover:-translate-y-1 hover:shadow-premium-hover'
+        property.prioridade
+          ? (isActive 
+              ? 'border-amber-500 shadow-lg shadow-amber-500/20 -translate-y-1 ring-1 ring-amber-500/50' 
+              : 'border-amber-400/80 dark:border-amber-600/40 hover:border-amber-500 hover:-translate-y-1 hover:shadow-premium-hover')
+          : (isActive 
+              ? 'border-emerald-500 shadow-lg shadow-emerald-500/5 -translate-y-1 ring-1 ring-emerald-500/50' 
+              : 'border-slate-100 dark:border-slate-800/80 hover:border-slate-200 dark:hover:border-slate-700 hover:-translate-y-1 hover:shadow-premium-hover')
       }`}
       onMouseEnter={() => onMouseEnter && onMouseEnter(property.id)}
       onMouseLeave={() => onMouseLeave && onMouseLeave()}
@@ -65,11 +92,18 @@ export default function PropertyCard({
         
         {/* Badges Flutuantes */}
         <div className="absolute left-3 top-3 flex flex-wrap gap-2 z-10">
+          {property.prioridade && (
+            <span className="px-2.5 py-1 text-[10px] font-black rounded-full bg-amber-500 text-slate-950 border border-amber-300 backdrop-blur-md flex items-center gap-1 shadow-md shadow-amber-500/10">
+              <Star size={11} className="fill-slate-950 stroke-none" />
+              <span>Prioridade</span>
+            </span>
+          )}
           <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full ${getStatusColor(property.status)}`}>
             {property.status}
           </span>
-          <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-slate-900/80 dark:bg-slate-950/80 text-white border border-white/10 backdrop-blur-md">
-            {property.tipo}
+          <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-slate-900/80 dark:bg-slate-950/80 text-white border border-white/10 backdrop-blur-md flex items-center gap-1">
+            {property.tipo === 'Casa' ? <Home size={12} /> : property.tipo === 'Apartamento' ? <Building size={12} /> : null}
+            <span>{property.tipo}</span>
           </span>
         </div>
 
@@ -105,7 +139,8 @@ export default function PropertyCard({
       {/* Detalhes do Conteúdo */}
       <div className="p-4 flex flex-col flex-grow text-slate-800 dark:text-slate-200">
         <span className="text-xl font-black font-sans text-slate-900 dark:text-white tracking-tight mb-1">
-          {formatPrice(property.preco)}
+          {property.preco ? `${formatPrice(property.preco)}` : ''}
+          {property.area_max_m2 && property.area_max_m2 > property.area_m2 ? ' (Inicial)' : ''}
         </span>
         
         <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 line-clamp-1 group-hover:text-slate-950 dark:group-hover:text-white transition-colors">
@@ -130,17 +165,17 @@ export default function PropertyCard({
         <div className="mt-3.5 pt-3.5 border-t border-slate-50 dark:border-slate-850 flex items-center justify-between text-slate-500 dark:text-slate-400 text-[10px] font-bold">
           <div className="flex items-center gap-1" title="Quartos">
             <BedDouble size={13} className="text-slate-400 dark:text-slate-550" />
-            <span>{property.quartos} Qrt</span>
+            <span>{formatQuartos()}</span>
           </div>
 
           <div className="flex items-center gap-1" title="Vagas de Garagem">
             <Car size={13} className="text-slate-400 dark:text-slate-550" />
-            <span>{property.vagas} Vag</span>
+            <span>{formatVagas()}</span>
           </div>
 
           <div className="flex items-center gap-1" title="Área Privativa">
             <Maximize size={13} className="text-slate-400 dark:text-slate-550" />
-            <span>{Math.round(property.area_m2)} m²</span>
+            <span>{formatArea()}</span>
           </div>
         </div>
 

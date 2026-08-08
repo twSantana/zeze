@@ -100,17 +100,31 @@ function MarkerClusterer({ properties, hoveredPropertyId, onPropertyClick, theme
 
       const isHovered = hoveredPropertyId === prop.id;
       
+      const getTypeSvg = (type) => {
+        if (type === 'Casa') {
+          return `<path d="M12 3 3 11.5V21h6v-6h6v6h6v-9.5L12 3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>`;
+        }
+        if (type === 'Apartamento') {
+          return `<path d="M7 21V9h10v12H7Zm3-3h2v-2H10v2Zm0-4h2v-2H10v2Zm4 4h2v-2h-2v2Zm0-4h2v-2h-2v2Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>`;
+        }
+        return `<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>`;
+      };
+      const pinSvg = getTypeSvg(prop.tipo);
+      const isPriority = prop.prioridade;
+      const pinColorClass = isPriority
+        ? (isHovered 
+            ? 'bg-amber-500 text-slate-950 scale-125 z-[9999] ring-4 ring-amber-500/25 border-amber-300' 
+            : 'bg-gradient-to-tr from-amber-600 to-yellow-400 text-slate-950 border-amber-200 shadow-md shadow-amber-500/10')
+        : (isHovered 
+            ? 'bg-emerald-500 text-white scale-125 z-[9999] ring-4 ring-emerald-500/20' 
+            : 'bg-slate-900 dark:bg-slate-950 text-emerald-400 hover:bg-slate-800');
+
       const customIcon = L.divIcon({
         className: `custom-pin-container ${isHovered ? 'active-map-pin' : ''}`,
         html: `
-          <div class="flex items-center justify-center w-8 h-8 rounded-full shadow-lg border border-white transition-all duration-300 ${
-            isHovered 
-              ? 'bg-emerald-500 text-white scale-125 z-[9999] ring-4 ring-emerald-500/20' 
-              : 'bg-slate-900 dark:bg-slate-950 text-emerald-450 dark:text-emerald-400 hover:bg-slate-800'
-          }">
+          <div class="flex items-center justify-center w-8 h-8 rounded-full shadow-lg border border-white transition-all duration-300 ${pinColorClass}">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-              <polyline points="9 22 9 12 15 12 15 22"/>
+              ${pinSvg}
             </svg>
           </div>
         `,
@@ -129,12 +143,19 @@ function MarkerClusterer({ properties, hoveredPropertyId, onPropertyClick, theme
       };
 
       const popupContent = `
-        <div class="flex flex-col w-[260px] bg-white dark:bg-slate-900 overflow-hidden rounded-xl">
+        <div class="flex flex-col w-[260px] bg-white dark:bg-slate-900 overflow-hidden rounded-xl border ${isPriority ? 'border-amber-500' : 'border-transparent'}">
           ${prop.imagem_url ? `
             <div class="h-28 w-full overflow-hidden relative">
               <img src="${prop.imagem_url}" class="w-full h-full object-cover" alt="${prop.titulo}" />
-              <div class="absolute top-2 left-2 bg-slate-900/80 text-white px-2 py-0.5 text-[9px] font-bold rounded-full border border-white/10 backdrop-blur-sm">
-                ${prop.tipo}
+              <div class="absolute top-2 left-2 flex gap-1 z-[100]">
+                ${isPriority ? `
+                  <div class="bg-amber-500 text-slate-950 px-2 py-0.5 text-[9px] font-black rounded-full shadow-md">
+                    ★ Prioridade
+                  </div>
+                ` : ''}
+                <div class="bg-slate-900/80 text-white px-2 py-0.5 text-[9px] font-bold rounded-full border border-white/10 backdrop-blur-sm">
+                  ${prop.tipo}
+                </div>
               </div>
             </div>
           ` : ''}
@@ -153,7 +174,7 @@ function MarkerClusterer({ properties, hoveredPropertyId, onPropertyClick, theme
             </div>
             <div class="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <span class="text-xs font-black text-slate-900 dark:text-white">${formatPrice(prop.preco)}</span>
-              <span class="text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-450 border border-emerald-100 dark:border-emerald-900/50">
+              <span class="text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50">
                 ${prop.status}
               </span>
             </div>
@@ -174,7 +195,7 @@ function MarkerClusterer({ properties, hoveredPropertyId, onPropertyClick, theme
       markersMapRef.current.set(prop.id, marker);
     });
 
-  }, [properties, map, theme]); // Recarrega marcadores se o tema mudar para aplicar classes Tailwind corretas
+  }, [properties, map, theme, hoveredPropertyId, onPropertyClick]);
 
   useEffect(() => {
     if (hoveredPropertyId) {
@@ -227,7 +248,7 @@ export default function MapView({
         <MapFocus focusLocation={focusLocation} />
 
         {/* Controle de Zoom Customizado */}
-        <div className="absolute right-4 top-4 z-[999] flex flex-col gap-1 shadow-md rounded-xl overflow-hidden border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 transition-colors">
+        <div className="absolute right-4 top-20 md:top-4 z-[999] flex flex-col gap-1 shadow-md rounded-xl overflow-hidden border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 transition-colors">
           <button
             onClick={() => {
               const leafletMap = document.querySelector('.leaflet-container')?._leaflet_map;

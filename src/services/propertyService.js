@@ -54,7 +54,13 @@ export async function addProperty(propertyData, user) {
       localizacao: wktLocation,
       created_by: user.id,
       created_by_name: user.nome,
-      created_by_role: user.role
+      created_by_role: user.role,
+      prioridade: Boolean(propertyData.prioridade),
+      observacoes: propertyData.observacoes || '',
+      averbacao: propertyData.averbacao || '',
+      quartos_max: propertyData.quartos_max ? parseInt(propertyData.quartos_max) : parseInt(propertyData.quartos || 0),
+      vagas_max: propertyData.vagas_max ? parseInt(propertyData.vagas_max) : parseInt(propertyData.vagas || 0),
+      area_max_m2: propertyData.area_max_m2 ? parseFloat(propertyData.area_max_m2) : parseFloat(propertyData.area_m2)
     }])
     .select();
 
@@ -95,7 +101,13 @@ export async function updateProperty(id, propertyData) {
       bairro: propertyData.bairro,
       cidade: propertyData.cidade,
       conteudo_url: propertyData.conteudo_url,
-      localizacao: wktLocation
+      localizacao: wktLocation,
+      prioridade: Boolean(propertyData.prioridade),
+      observacoes: propertyData.observacoes || '',
+      averbacao: propertyData.averbacao || '',
+      quartos_max: propertyData.quartos_max ? parseInt(propertyData.quartos_max) : parseInt(propertyData.quartos || 0),
+      vagas_max: propertyData.vagas_max ? parseInt(propertyData.vagas_max) : parseInt(propertyData.vagas || 0),
+      area_max_m2: propertyData.area_max_m2 ? parseFloat(propertyData.area_max_m2) : parseFloat(propertyData.area_m2)
     })
     .eq('id', id)
     .select();
@@ -219,4 +231,41 @@ export async function deletePropertyImageByPath(bucket, path) {
   const { error } = await supabase.storage.from(bucket).remove([path]);
   if (error) throw error;
   return true;
+}
+
+export async function getConstrutoras() {
+  assertSupabaseConfigured();
+  const { data, error } = await supabase
+    .from('construtoras')
+    .select('*')
+    .order('nome', { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+export async function addConstrutora(nome) {
+  assertSupabaseConfigured();
+  const { data, error } = await supabase
+    .from('construtoras')
+    .insert([{ nome }])
+    .select();
+  if (error) throw error;
+  return data && data[0] ? data[0] : null;
+}
+
+export async function uploadAvatar(file, userId) {
+  assertSupabaseConfigured();
+  if (!file) throw new Error('Arquivo inválido.');
+  const bucket = 'property-images'; // Reuso do bucket existente para simplificar e garantir que funcione
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const path = `properties/avatars/${userId}/${Date.now()}_${safeName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from(bucket)
+    .upload(path, file, { cacheControl: '3600', upsert: true, contentType: file.type });
+
+  if (uploadError) throw uploadError;
+
+  const { data: urlData } = await supabase.storage.from(bucket).getPublicUrl(path);
+  return urlData?.publicUrl || null;
 }

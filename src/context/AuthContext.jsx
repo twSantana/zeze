@@ -120,7 +120,10 @@ export function AuthProvider({ children }) {
         email: authUser.email,
         nome: data.nome,
         role: data.role,
-        ativo: data.ativo
+        ativo: data.ativo,
+        telefone: data.telefone || '',
+        avatar_url: data.avatar_url || '',
+        whatsapp_configured: data.whatsapp_configured || false
       };
 
       console.log('[DEBUG AUTH] setUser ativo:', sessionUser);
@@ -225,15 +228,46 @@ export function AuthProvider({ children }) {
       throw error;
     }
 
-    console.log('[DEBUG AUTH] Usuário cadastrado no auth.users do Supabase. ID:', data.user.id);
+    const createdUserId = data?.user?.id;
+    console.log('[DEBUG AUTH] Usuário cadastrado no auth.users do Supabase. ID:', createdUserId);
     
-    // Atualiza a lista de perfis para refletir o novo perfil criado automaticamente pela trigger
-    setTimeout(() => {
-      refreshProfiles();
-    }, 500); // Pequeno delay de sincronia para a trigger completar
+    if (createdUserId) {
+      // Pequena espera para que a trigger do Supabase crie a linha no profiles
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Atualiza o cargo (role) e o nome diretamente no banco de dados para garantir que fique registrado!
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          nome: profileData.nome,
+          role: profileData.role,
+          ativo: true
+        })
+        .eq('id', createdUserId);
+
+      if (updateError) {
+        console.error('[DEBUG AUTH] Falha ao atualizar cargo via update, tentando insert de fallback:', updateError.message);
+        // Fallback: Se a trigger não criou a linha, nós inserimos manualmente
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: createdUserId,
+            nome: profileData.nome,
+            email: profileData.email,
+            role: profileData.role,
+            ativo: true
+          });
+        if (insertError) {
+          console.error('[DEBUG AUTH] Falha no insert de fallback de perfil:', insertError.message);
+        }
+      }
+    }
+
+    // Atualiza a lista de perfis
+    refreshProfiles();
     
     return {
-      id: data.user.id,
+      id: createdUserId,
       nome: profileData.nome,
       email: profileData.email,
       role: profileData.role,
@@ -244,6 +278,15 @@ export function AuthProvider({ children }) {
   const updateProfile = async (id, profileData) => {
     const { data, error } = await supabase.from('profiles').update(profileData).eq('id', id).select();
     if (error) throw error;
+    
+    if (user && id === user.id) {
+      setUser(prev => {
+        const updated = { ...prev, ...profileData };
+        console.log('[DEBUG AUTH] setUser atualizado localmente:', updated);
+        return updated;
+      });
+    }
+
     refreshProfiles();
     return data[0];
   };

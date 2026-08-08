@@ -39,8 +39,8 @@ export default function LoginScreen({ onThemeToggle, theme }) {
       <div 
         className="absolute inset-0 bg-cover bg-center transition-all duration-500 scale-105"
         style={{ 
-          backgroundImage: `url('https://images.unsplash.com/photo-1549693578-d683be217e58?w=1600&auto=format&fit=crop&q=80')`,
-          filter: 'brightness(0.3) blur(6px)'
+          backgroundImage: `url('/bg_login.png')`,
+          filter: 'brightness(0.3) blur(4px)'
         }}
       />
 
@@ -65,7 +65,7 @@ export default function LoginScreen({ onThemeToggle, theme }) {
               <Building size={28} />
             </div>
             <h1 className="text-xl font-extrabold text-slate-900 dark:text-white font-sans uppercase tracking-wider">
-              Mapeamento RMC
+              Mapa Zelony
             </h1>
             <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
               Plataforma de Corretores & Consultores

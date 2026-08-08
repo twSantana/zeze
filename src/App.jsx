@@ -6,11 +6,12 @@ import BottomSheet from './components/BottomSheet';
 import LoginScreen from './components/LoginScreen';
 import AdminModal from './components/AdminModal';
 import LeadModal from './components/LeadModal';
+import PropertyDetailModal from './components/PropertyDetailModal';
 import { getPropertiesBbox, addProperty, updateProperty, deleteProperty, uploadPropertyImages } from './services/propertyService';
 import { Building, Plus } from 'lucide-react';
 
 function AppContent({ theme, onThemeToggle }) {
-  const { user, loading, isGerente, isMaster, isCorretor, supabaseError } = useAuth();
+  const { user, loading, isGerente, isMaster, isCorretor, supabaseError, profiles, updateProfile } = useAuth();
   
   // Estados de dados e mapa
   const [rawProperties, setRawProperties] = useState([]);
@@ -18,6 +19,11 @@ function AppContent({ theme, onThemeToggle }) {
   const [hoveredPropertyId, setHoveredPropertyId] = useState(null);
   const [focusLocation, setFocusLocation] = useState(null);
   const [bbox, setBbox] = useState(null);
+
+  // Primeiro Acesso WhatsApp
+  const [forcePhone, setForcePhone] = useState('');
+  const [forcePhoneError, setForcePhoneError] = useState('');
+  const [savingForcePhone, setSavingForcePhone] = useState(false);
 
   // Estados dos Modais
   const [isAdminOpen, setIsAdminOpen] = useState(false);
@@ -27,6 +33,10 @@ function AppContent({ theme, onThemeToggle }) {
   const [isLeadOpen, setIsLeadOpen] = useState(false);
   const [selectedPropertyForLead, setSelectedPropertyForLead] = useState(null);
 
+  // Detalhes do Imóvel
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedPropertyForDetails, setSelectedPropertyForDetails] = useState(null);
+
   // Filtros ativos (Completo)
   const [filters, setFilters] = useState({
     buscaTextual: '',
@@ -35,7 +45,8 @@ function AppContent({ theme, onThemeToggle }) {
     precoMax: 3000000,
     quartos: 'Todos',
     vagasMin: 'Todos',
-    areaMin: 30
+    areaMin: 30,
+    apenasDestaques: false
   });
 
   // 1. Carrega dados do Bounding Box quando o mapa se move
@@ -105,6 +116,11 @@ function AppContent({ theme, onThemeToggle }) {
       result = result.filter(p => p.area_m2 >= filters.areaMin);
     }
 
+    // Filtro de Apenas Destaques
+    if (filters.apenasDestaques) {
+      result = result.filter(p => p.prioridade);
+    }
+
     setFilteredProperties(result);
   }, [rawProperties, filters, user]);
 
@@ -118,7 +134,7 @@ function AppContent({ theme, onThemeToggle }) {
     setBbox(newBbox);
   };
 
-  // Foca no imóvel selecionado (voando para suas coordenadas)
+  // Foca no imóvel selecionado (voando para suas coordenadas e abrindo detalhes)
   const handlePropertyFocus = (property) => {
     setFocusLocation({
       lat: property.lat,
@@ -127,6 +143,8 @@ function AppContent({ theme, onThemeToggle }) {
       timestamp: Date.now()
     });
     setHoveredPropertyId(property.id);
+    setSelectedPropertyForDetails(property);
+    setIsDetailsOpen(true);
   };
 
   // Funções CRUD do Administrador
@@ -163,8 +181,9 @@ function AppContent({ theme, onThemeToggle }) {
     try {
       if (propertyToEdit) {
         const updated = await updateProperty(propertyToEdit.id, formData);
+        const updatedWithCoords = { ...updated, lat: formData.lat, lng: formData.lng };
         setRawProperties(prev => 
-          prev.map(p => p.id === propertyToEdit.id ? { ...p, ...updated } : p)
+          prev.map(p => p.id === propertyToEdit.id ? updatedWithCoords : p)
         );
 
         // Handle uploaded images when editing
@@ -172,27 +191,34 @@ function AppContent({ theme, onThemeToggle }) {
           const uploaded = await uploadPropertyImages(formData.images, propertyToEdit.id);
           if (uploaded && uploaded.length > 0) {
             const first = uploaded[0];
-            // update cover image url
             const updatedWithCover = await updateProperty(propertyToEdit.id, { ...formData, imagem_url: first.url });
-            setRawProperties(prev => prev.map(p => p.id === propertyToEdit.id ? { ...p, ...updatedWithCover } : p));
+            const updatedWithCoverCoords = { ...updatedWithCover, lat: formData.lat, lng: formData.lng };
+            setRawProperties(prev => prev.map(p => p.id === propertyToEdit.id ? updatedWithCoverCoords : p));
+            handlePropertyFocus(updatedWithCoverCoords);
+          } else {
+            handlePropertyFocus(updatedWithCoords);
           }
+        } else {
+          handlePropertyFocus(updatedWithCoords);
         }
       } else {
         const created = await addProperty(formData, user);
-        setRawProperties(prev => [created, ...prev]);
+        const createdWithCoords = { ...created, lat: formData.lat, lng: formData.lng };
+        setRawProperties(prev => [createdWithCoords, ...prev]);
         // If there are images selected, upload them and set cover
         if (formData.images && formData.images.length > 0) {
           const uploaded = await uploadPropertyImages(formData.images, created.id);
           if (uploaded && uploaded.length > 0) {
             const first = uploaded[0];
             const updatedWithCover = await updateProperty(created.id, { ...formData, imagem_url: first.url });
-            setRawProperties(prev => prev.map(p => p.id === created.id ? { ...p, ...updatedWithCover } : p));
-            handlePropertyFocus(updatedWithCover);
+            const updatedWithCoverCoords = { ...updatedWithCover, lat: formData.lat, lng: formData.lng };
+            setRawProperties(prev => prev.map(p => p.id === created.id ? updatedWithCoverCoords : p));
+            handlePropertyFocus(updatedWithCoverCoords);
           } else {
-            handlePropertyFocus(created);
+            handlePropertyFocus(createdWithCoords);
           }
         } else {
-          handlePropertyFocus(created);
+          handlePropertyFocus(createdWithCoords);
         }
       }
       setIsAdminOpen(false);
@@ -203,10 +229,32 @@ function AppContent({ theme, onThemeToggle }) {
     }
   };
 
-  // Contato com Consultor
+  // Contato com Consultor Responsável via WhatsApp
   const handleContactClick = (property) => {
-    setSelectedPropertyForLead(property);
-    setIsLeadOpen(true);
+    const rawAverb = property.averbacao || '';
+    let targetBrokerProfile = null;
+    
+    if (rawAverb.startsWith('Corretor: ')) {
+      const brokerName = rawAverb.replace('Corretor: ', '');
+      targetBrokerProfile = profiles?.find(p => p.nome === brokerName && p.ativo);
+    }
+    
+    // Fallback: se não achar pelo corretor da averbação, tenta achar pelo criador (created_by)
+    if (!targetBrokerProfile && property.created_by) {
+      targetBrokerProfile = profiles?.find(p => p.id === property.created_by && p.ativo);
+    }
+    
+    if (targetBrokerProfile && targetBrokerProfile.telefone) {
+      const cleanPhone = targetBrokerProfile.telefone.replace(/\D/g, '');
+      const messageText = `Olá! Gostaria de mais informações sobre o imóvel "${property.titulo}" (${property.tipo} em ${property.bairro}, ${property.cidade}).`;
+      const phonePrefix = cleanPhone.startsWith('55') ? '' : '55';
+      
+      window.open(`https://api.whatsapp.com/send?phone=${phonePrefix}${cleanPhone}&text=${encodeURIComponent(messageText)}`, '_blank');
+    } else {
+      // Se não achar o WhatsApp do corretor, abre o modal de lead padrão como fallback
+      setSelectedPropertyForLead(property);
+      setIsLeadOpen(true);
+    }
   };
 
   // 3. Renderização de Carregamento Inicial do Sistema
@@ -298,7 +346,7 @@ function AppContent({ theme, onThemeToggle }) {
                 <Building size={14} />
               </div>
               <div>
-                <h2 className="text-xs font-bold text-slate-805 dark:text-slate-100 leading-none">Mapeamento RMC</h2>
+                <h2 className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-none">Mapa Zelony</h2>
                 <span className="text-[8px] text-slate-400 dark:text-slate-500 font-medium">Painel do Consultor</span>
               </div>
             </div>
@@ -348,6 +396,88 @@ function AppContent({ theme, onThemeToggle }) {
         }}
         property={selectedPropertyForLead}
       />
+
+      <PropertyDetailModal
+        isOpen={isDetailsOpen}
+        onClose={() => {
+          setIsDetailsOpen(false);
+          setSelectedPropertyForDetails(null);
+        }}
+        property={selectedPropertyForDetails}
+        onContactClick={handleContactClick}
+      />
+
+      {/* Modal de Primeiro Acesso - Cadastro Obrigatório de WhatsApp */}
+      {user && !user.whatsapp_configured && (
+        <div className="fixed inset-0 z-[999999] bg-slate-950/95 backdrop-blur-lg flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md p-6 shadow-2xl border border-slate-200 dark:border-slate-800 animate-fadeIn">
+            <div className="text-center mb-5">
+              <div className="w-14 h-14 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg className="w-7 h-7 animate-pulse text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-black text-slate-900 dark:text-white">Primeiro Acesso: WhatsApp</h2>
+              <p className="text-xs text-slate-550 dark:text-slate-400 mt-1.5 leading-normal">
+                Para prosseguir e acessar o painel do <strong>Mapa Zelony</strong>, é obrigatório cadastrar o seu número de WhatsApp de trabalho.
+              </p>
+            </div>
+
+            {forcePhoneError && (
+              <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 text-red-600 dark:text-red-400 text-xs font-semibold">
+                {forcePhoneError}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1 mb-4">
+              <label className="text-[10px] font-bold text-slate-555 dark:text-slate-400 uppercase">Seu WhatsApp (com DDD)</label>
+              <input
+                type="text"
+                value={forcePhone}
+                onChange={(e) => setForcePhone(e.target.value.replace(/\D/g, ''))}
+                placeholder="Ex: 41999998888"
+                className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-950/50 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
+                required
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('force-submit-btn')?.click();
+                  }
+                }}
+              />
+              <span className="text-[9px] text-slate-400 dark:text-slate-500 mt-1 leading-relaxed">
+                Este número será associado a todas as suas captações para permitir contato direto dos interessados.
+              </span>
+            </div>
+
+            <button
+              id="force-submit-btn"
+              onClick={async () => {
+                if (!forcePhone || forcePhone.length < 10) {
+                  setForcePhoneError('Por favor, informe um número de telefone com DDD válido.');
+                  return;
+                }
+                setSavingForcePhone(true);
+                setForcePhoneError('');
+                try {
+                  await updateProfile(user.id, {
+                    telefone: forcePhone,
+                    whatsapp_configured: true
+                  });
+                } catch (err) {
+                  setForcePhoneError('Ocorreu um erro ao salvar seu número no banco. Tente novamente.');
+                } finally {
+                  setSavingForcePhone(false);
+                }
+              }}
+              disabled={savingForcePhone}
+              className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:bg-emerald-500/55 text-slate-950 font-bold text-xs transition shadow-md"
+            >
+              {savingForcePhone ? 'Gravando número...' : 'Acessar o Sistema'}
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

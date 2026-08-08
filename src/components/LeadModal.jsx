@@ -1,18 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, MessageSquare, Send, CheckCircle } from 'lucide-react';
 import { addLead } from '../services/leadService';
 
 export default function LeadModal({ isOpen, onClose, property }) {
-  if (!isOpen || !property) return null;
-
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [message, setMessage] = useState(
-    `Olá! Tenho interesse no empreendimento "${property.titulo}" em ${property.bairro}, ${property.cidade}. Por favor, me envie mais informações.`
-  );
+  const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (property) {
+      setName('');
+      setEmail('');
+      setPhone('');
+      setMessage(`Olá! Tenho interesse no empreendimento "${property.titulo}" em ${property.bairro}, ${property.cidade}. Por favor, me envie mais informações.`);
+      setSubmitted(false);
+    }
+  }, [property]);
+
+  if (!isOpen || !property) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();

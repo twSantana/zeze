@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
   ChevronUp, ChevronDown, SlidersHorizontal, Plus, Moon, Sun, 
-  MessageSquare, Users, Building, Mail, Phone, Trash2, Info 
+  Users, Building, Info 
 } from 'lucide-react';
 import PropertyCard from './PropertyCard';
 import UserManagementTab from './UserManagementTab';
 import { useAuth } from '../context/AuthContext';
-import { getLeads, deleteLead } from '../services/leadService';
 
 export default function BottomSheet({
   properties,
@@ -24,21 +23,10 @@ export default function BottomSheet({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const { user, logout, isCorretor, isGerente, isMaster } = useAuth();
+  const { user, logout, isCorretor, isMaster } = useAuth();
   
-  // Abas do Painel: 'properties' | 'leads' | 'team'
+  // Abas do Painel: 'properties' | 'team'
   const [activeTab, setActiveTab] = useState('properties');
-  const [leadsList, setLeadsList] = useState([]);
-
-  const loadLeads = () => {
-    setLeadsList(getLeads());
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      loadLeads();
-    }
-  }, [isOpen, activeTab]);
 
   useEffect(() => {
     const updateMobile = () => {
@@ -50,13 +38,6 @@ export default function BottomSheet({
     window.addEventListener('resize', updateMobile);
     return () => window.removeEventListener('resize', updateMobile);
   }, []);
-
-  const handleDeleteLead = (id) => {
-    if (window.confirm('Excluir este lead de contato?')) {
-      deleteLead(id);
-      loadLeads();
-    }
-  };
 
   const citiesList = [
     'Todas',
@@ -80,7 +61,7 @@ export default function BottomSheet({
 
   return (
     <div 
-      className={`fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 rounded-t-3xl border-t border-slate-200 dark:border-slate-800 shadow-2xl z-40 transition-all duration-300 flex flex-col overflow-hidden ${
+      className={`fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 rounded-t-3xl border-t border-slate-200 dark:border-slate-800 shadow-2xl z-[9999] transition-all duration-300 flex flex-col overflow-hidden ${
         isOpen ? 'h-[60vh]' : 'h-[64px]'
       } w-full`}
       style={{
@@ -100,12 +81,7 @@ export default function BottomSheet({
           <div className="flex items-center gap-2">
             {isOpen ? <ChevronDown size={18} className="text-slate-500" /> : <ChevronUp size={18} className="text-slate-500" />}
             <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-              {activeTab === 'properties' 
-                ? `${properties.length} ${properties.length === 1 ? 'imóvel filtrado' : 'imóveis filtrados'}`
-                : activeTab === 'leads' 
-                  ? `${leadsList.length} leads recebidos`
-                  : 'Gerenciamento de Equipe'
-              }
+              {activeTab === 'team' ? 'Gerenciamento de Equipe' : `${properties.length} ${properties.length === 1 ? 'imóvel filtrado' : 'imóveis filtrados'}`}
             </span>
           </div>
 
@@ -168,18 +144,6 @@ export default function BottomSheet({
               <span>Imóveis</span>
             </button>
 
-            <button
-              onClick={() => { setActiveTab('leads'); setShowMobileFilters(false); }}
-              className={`flex-grow py-2 text-[9px] font-extrabold uppercase rounded-xl transition flex items-center justify-center gap-1.5 border ${
-                activeTab === 'leads'
-                  ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm'
-                  : 'text-slate-500 hover:text-slate-850 border-transparent'
-              }`}
-            >
-              <MessageSquare size={11} />
-              <span>Leads ({leadsList.length})</span>
-            </button>
-
             {isMaster && (
               <button
                 onClick={() => { setActiveTab('team'); setShowMobileFilters(false); }}
@@ -221,7 +185,7 @@ export default function BottomSheet({
                 >
                   <option value="Todos">Todos</option>
                   <option value="Apartamento">Apartamento</option>
-                  <option value="Sobrado">Sobrado</option>
+              <option value="Casa">Casa</option>
                   <option value="Terreno">Terreno</option>
                 </select>
               </div>
@@ -319,69 +283,6 @@ export default function BottomSheet({
                   <div className="text-center py-16 text-slate-400">
                     <Info size={30} className="mb-2 mx-auto stroke-1" />
                     <p className="text-xs">Nenhum imóvel encontrado.</p>
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* ABA LEADS */}
-            {activeTab === 'leads' && (
-              <>
-                {leadsList.map(lead => (
-                  <div 
-                    key={lead.id}
-                    className="p-4 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 flex flex-col gap-2.5 transition"
-                  >
-                    <div className="flex items-start justify-between gap-2 border-b border-slate-50 dark:border-slate-900 pb-2">
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-slate-50">{lead.clientName}</h4>
-                        <p className="text-[9px] text-slate-400 dark:text-slate-500 font-medium">
-                          {new Date(lead.criado_em).toLocaleDateString('pt-BR')}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => handleDeleteLead(lead.id)}
-                        className="p-1 text-slate-400 hover:text-red-500"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400 flex flex-col gap-1.5 bg-slate-50 dark:bg-slate-900/60 p-2 rounded-xl">
-                      <div className="flex items-center gap-1.5">
-                        <Mail size={10} />
-                        <span>{lead.clientEmail}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Phone size={10} />
-                        <span>{lead.clientPhone}</span>
-                      </div>
-                      <div className="font-bold text-slate-700 dark:text-slate-300">
-                        Imóvel: {lead.propertyTitle}
-                      </div>
-                    </div>
-
-                    <p className="text-[10px] text-slate-700 dark:text-slate-350 italic p-2 rounded-lg bg-slate-50/50 dark:bg-slate-950 border border-slate-100 dark:border-slate-850">
-                      "{lead.clientMessage}"
-                    </p>
-
-                    <a
-                      href={`https://wa.me/55${lead.clientPhone}?text=${encodeURIComponent(
-                        `Olá ${lead.clientName}, sou o corretor da imobiliária. Recebi seu interesse no imóvel "${lead.propertyTitle}". Como posso te ajudar hoje?`
-                      )}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full py-2 bg-emerald-500 text-slate-950 text-[10px] font-bold rounded-xl flex items-center justify-center gap-1.5"
-                    >
-                      <Phone size={12} />
-                      <span>Chamar no WhatsApp</span>
-                    </a>
-                  </div>
-                ))}
-
-                {leadsList.length === 0 && (
-                  <div className="text-center py-16 text-slate-400 text-xs">
-                    Nenhum lead de contato registrado.
                   </div>
                 )}
               </>
