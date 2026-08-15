@@ -26,6 +26,15 @@ export async function getPropertiesBbox({ minLng, minLat, maxLng, maxLat }) {
   return data || [];
 }
 
+export function calculateFaixa(preco) {
+  const p = parseFloat(preco);
+  if (isNaN(p)) return 'Faixa 2';
+  if (p <= 275000) return 'Faixa 2';
+  if (p <= 400000) return 'Faixa 3';
+  if (p <= 600000) return 'Faixa 4';
+  return 'SBPE';
+}
+
 /**
  * Criação
  */
@@ -60,7 +69,9 @@ export async function addProperty(propertyData, user) {
       averbacao: propertyData.averbacao || '',
       quartos_max: propertyData.quartos_max ? parseInt(propertyData.quartos_max) : parseInt(propertyData.quartos || 0),
       vagas_max: propertyData.vagas_max ? parseInt(propertyData.vagas_max) : parseInt(propertyData.vagas || 0),
-      area_max_m2: propertyData.area_max_m2 ? parseFloat(propertyData.area_max_m2) : parseFloat(propertyData.area_m2)
+      area_max_m2: propertyData.area_max_m2 ? parseFloat(propertyData.area_max_m2) : parseFloat(propertyData.area_m2),
+      faixa: calculateFaixa(propertyData.preco),
+      drive_url: propertyData.drive_url || ''
     }])
     .select();
 
@@ -107,7 +118,9 @@ export async function updateProperty(id, propertyData) {
       averbacao: propertyData.averbacao || '',
       quartos_max: propertyData.quartos_max ? parseInt(propertyData.quartos_max) : parseInt(propertyData.quartos || 0),
       vagas_max: propertyData.vagas_max ? parseInt(propertyData.vagas_max) : parseInt(propertyData.vagas || 0),
-      area_max_m2: propertyData.area_max_m2 ? parseFloat(propertyData.area_max_m2) : parseFloat(propertyData.area_m2)
+      area_max_m2: propertyData.area_max_m2 ? parseFloat(propertyData.area_max_m2) : parseFloat(propertyData.area_m2),
+      faixa: calculateFaixa(propertyData.preco),
+      drive_url: propertyData.drive_url || ''
     })
     .eq('id', id)
     .select();

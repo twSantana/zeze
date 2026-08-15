@@ -180,16 +180,18 @@ export default function PropertyCard({
         </div>
 
         {/* Ação: Falar com Consultor */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onContactClick(property);
-          }}
-          className="mt-4 w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-slate-950 dark:text-white text-[11px] font-extrabold rounded-2xl flex items-center justify-center gap-1.5 transition-all shadow-sm"
-        >
-          <MessageSquare size={13} />
-          <span>Falar com Consultor</span>
-        </button>
+        {!property.averbacao?.startsWith('Construtora: ') && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onContactClick(property);
+            }}
+            className="mt-4 w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-slate-950 dark:text-white text-[11px] font-extrabold rounded-2xl flex items-center justify-center gap-1.5 transition-all shadow-sm"
+          >
+            <MessageSquare size={13} />
+            <span>Falar com Consultor</span>
+          </button>
+        )}
 
         {/* Link para o Conteúdo Externo Adicional */}
         {property.conteudo_url && (

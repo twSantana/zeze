@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, MapPin, BedDouble, Car, Maximize, 
   ExternalLink, ShieldCheck, FileText, Star, Landmark, Award,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, FolderOpen
 } from 'lucide-react';
 import { getPropertyImages } from '../services/propertyService';
 
@@ -238,6 +238,11 @@ export default function PropertyDetailModal({ isOpen, onClose, property, onConta
               <span className="px-3 py-0.8 text-[9px] font-bold uppercase rounded-full bg-slate-100 dark:bg-slate-800 text-slate-650 dark:text-slate-300 border border-slate-200/40 dark:border-slate-800/80">
                 {property.tipo}
               </span>
+              {property.faixa && (
+                <span className="px-3 py-0.8 text-[9px] font-extrabold uppercase rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-450 border border-emerald-250 dark:border-emerald-900/40">
+                  {property.faixa === 'SBPE' ? 'SBPE' : `${property.faixa} (MCMV)`}
+                </span>
+              )}
             </div>
 
             {/* Título e Localidade */}
@@ -322,27 +327,43 @@ export default function PropertyDetailModal({ isOpen, onClose, property, onConta
           </div>
 
           {/* Botões de Ação */}
-          <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row gap-3 bg-white dark:bg-slate-900 shrink-0">
-            {property.conteudo_url && (
-              <a
-                href={property.conteudo_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-grow py-3 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-750 dark:text-slate-200 text-xs font-black flex items-center justify-center gap-1.5 border border-slate-200/40 dark:border-slate-800/80 transition"
-              >
-                <ExternalLink size={14} />
-                <span>Ver Página de Conteúdo</span>
-              </a>
-            )}
+          <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/60 flex flex-col gap-2.5 bg-white dark:bg-slate-900 shrink-0">
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
+              {property.conteudo_url && (
+                <a
+                  href={property.conteudo_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-grow py-3 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-750 dark:text-slate-200 text-xs font-black flex items-center justify-center gap-1.5 border border-slate-200/40 dark:border-slate-800/80 transition"
+                >
+                  <ExternalLink size={14} />
+                  <span>Ver Página de Conteúdo</span>
+                </a>
+              )}
 
-            <button
-              onClick={() => {
-                onContactClick(property);
-              }}
-              className="flex-grow py-3 px-5 bg-emerald-500 hover:bg-emerald-400 dark:bg-emerald-600 dark:hover:bg-emerald-505 text-slate-950 dark:text-white text-xs font-black rounded-2xl flex items-center justify-center gap-1.5 transition-all shadow-md shadow-emerald-500/10"
-            >
-              <span>Falar com Consultor</span>
-            </button>
+              {property.drive_url && (
+                <a
+                  href={property.drive_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-grow py-3 px-4 rounded-2xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-955/20 dark:hover:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-black flex items-center justify-center gap-1.5 border border-amber-200/40 dark:border-amber-900/20 transition"
+                >
+                  <FolderOpen size={14} className="text-amber-500 dark:text-amber-450" />
+                  <span>Google Drive / Anexos</span>
+                </a>
+              )}
+            </div>
+
+            {!property.averbacao?.startsWith('Construtora: ') && (
+              <button
+                onClick={() => {
+                  onContactClick(property);
+                }}
+                className="w-full py-3 px-5 bg-emerald-500 hover:bg-emerald-400 dark:bg-emerald-600 dark:hover:bg-emerald-505 text-slate-950 dark:text-white text-xs font-black rounded-2xl flex items-center justify-center gap-1.5 transition-all shadow-md shadow-emerald-500/10"
+              >
+                <span>Falar com Consultor</span>
+              </button>
+            )}
           </div>
 
         </div>

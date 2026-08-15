@@ -205,6 +205,22 @@ export default function Sidebar({
               </div>
             </div>
 
+            {/* Novo Filtro: Programa / Faixa de Financiamento */}
+            <div className="flex flex-col gap-1 mt-3">
+              <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Faixa de Financiamento / Programa</label>
+              <select
+                value={filters.faixa || 'Todos'}
+                onChange={(e) => onFilterChange('faixa', e.target.value)}
+                className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-2 text-slate-705 dark:text-slate-400 focus:outline-none font-medium"
+              >
+                <option value="Todos">Todos os programas / faixas</option>
+                <option value="Faixa 2">Faixa 2 (Renda até 5k / Imóvel até 275k)</option>
+                <option value="Faixa 3">Faixa 3 (Renda até 9k / Imóvel até 400k)</option>
+                <option value="Faixa 4">Faixa 4 (Renda até 13k / Imóvel até 600k)</option>
+                <option value="SBPE">SBPE (Imóvel acima de 600k)</option>
+              </select>
+            </div>
+
             {/* Vagas e Área Mínima em Grade */}
             <div className="grid grid-cols-2 gap-3 mt-3">
               {/* Vagas */}

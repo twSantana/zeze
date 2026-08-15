@@ -46,7 +46,8 @@ function AppContent({ theme, onThemeToggle }) {
     quartos: 'Todos',
     vagasMin: 'Todos',
     areaMin: 30,
-    apenasDestaques: false
+    apenasDestaques: false,
+    faixa: 'Todos'
   });
 
   // 1. Carrega dados do Bounding Box quando o mapa se move
@@ -119,6 +120,11 @@ function AppContent({ theme, onThemeToggle }) {
     // Filtro de Apenas Destaques
     if (filters.apenasDestaques) {
       result = result.filter(p => p.prioridade);
+    }
+
+    // Filtro de Faixa de Financiamento / Programa
+    if (filters.faixa && filters.faixa !== 'Todos') {
+      result = result.filter(p => p.faixa === filters.faixa);
     }
 
     setFilteredProperties(result);

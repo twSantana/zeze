@@ -63,7 +63,8 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
     averbacao: '',
     quartos_max: '',
     vagas_max: '',
-    area_max_m2: ''
+    area_max_m2: '',
+    drive_url: ''
   });
 
   const { profiles, user } = useAuth();
@@ -112,7 +113,8 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
         averbacao: propertyToEdit.averbacao || '',
         quartos_max: propertyToEdit.quartos_max ?? '',
         vagas_max: propertyToEdit.vagas_max ?? '',
-        area_max_m2: propertyToEdit.area_max_m2 || ''
+        area_max_m2: propertyToEdit.area_max_m2 || '',
+        drive_url: propertyToEdit.drive_url || ''
       });
       setCepFeedback('Coordenadas originais carregadas.');
 
@@ -157,7 +159,8 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
         averbacao: '',
         quartos_max: '',
         vagas_max: '',
-        area_max_m2: ''
+        area_max_m2: '',
+        drive_url: ''
       });
       setCepFeedback('');
       setRespType('corretor-self');
@@ -539,6 +542,18 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
                 value={formData.conteudo_url}
                 onChange={(e) => handleInputChange('conteudo_url', e.target.value)}
                 placeholder="https://exemplo.com/tour-virtual-vitra"
+                className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-950/50 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
+              />
+            </div>
+
+            {/* Novo Campo: Link do Google Drive */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Link do Google Drive (Tabelas, Anexos, PDFs)</label>
+              <input
+                type="url"
+                value={formData.drive_url}
+                onChange={(e) => handleInputChange('drive_url', e.target.value)}
+                placeholder="https://drive.google.com/drive/folders/..."
                 className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-950/50 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
               />
             </div>
