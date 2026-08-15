@@ -149,9 +149,9 @@ export default function PropertyDetailModal({ isOpen, onClose, property, onConta
         </button>
 
         {/* Lado Esquerdo: Imagem Principal e Galeria */}
-        <div className="w-full md:w-1/2 flex flex-col bg-slate-50 dark:bg-slate-950/30 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800/60 p-5 md:p-6 shrink-0 justify-between h-[360px] md:h-full overflow-y-auto">
+        <div className="w-full md:w-1/2 flex flex-col bg-slate-50 dark:bg-slate-955/30 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800/60 p-4 md:p-6 shrink-0 justify-between aspect-video md:aspect-auto md:h-full overflow-y-auto">
           <div className="w-full h-full flex flex-col gap-4">
-            <div className="w-full h-64 md:h-[320px] rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-950/50 border border-slate-150 dark:border-slate-850 relative group/img">
+            <div className="w-full h-44 md:h-[320px] rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-950/50 border border-slate-150 dark:border-slate-850 relative group/img">
               {currentImageUrl ? (
                 <img 
                   src={currentImageUrl} 

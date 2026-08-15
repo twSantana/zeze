@@ -7,6 +7,7 @@ import {
 import { uploadAvatar } from '../services/propertyService';
 import PropertyCard from './PropertyCard';
 import UserManagementTab from './UserManagementTab';
+import ConstrutorasTab from './ConstrutorasTab';
 import { useAuth } from '../context/AuthContext';
 
 export default function Sidebar({
@@ -109,10 +110,10 @@ export default function Sidebar({
       </div>
 
       {/* Tabs de Controle */}
-      <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 shrink-0 flex gap-2">
+      <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 shrink-0 flex gap-1.5 overflow-x-auto scrollbar-none flex-nowrap">
         <button
           onClick={() => setActiveTab('properties')}
-          className={`flex-grow py-2 text-[10px] font-bold uppercase rounded-xl transition flex items-center justify-center gap-1.5 border ${
+          className={`flex-grow flex-shrink-0 min-w-[75px] py-2 text-[10px] font-bold uppercase rounded-xl transition flex items-center justify-center gap-1.5 border ${
             activeTab === 'properties'
               ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm'
               : 'text-slate-500 hover:text-slate-800 border-transparent'
@@ -123,22 +124,36 @@ export default function Sidebar({
         </button>
 
         {isMaster && (
-          <button
-            onClick={() => setActiveTab('team')}
-            className={`flex-grow py-2 text-[10px] font-bold uppercase rounded-xl transition flex items-center justify-center gap-1.5 border ${
-              activeTab === 'team'
-                ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm'
-                : 'text-slate-500 hover:text-slate-800 border-transparent'
-            }`}
-          >
-            <Users size={12} />
-            <span>Equipe</span>
-          </button>
+          <>
+            <button
+              onClick={() => setActiveTab('team')}
+              className={`flex-grow flex-shrink-0 min-w-[75px] py-2 text-[10px] font-bold uppercase rounded-xl transition flex items-center justify-center gap-1.5 border ${
+                activeTab === 'team'
+                  ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800 border-transparent'
+              }`}
+            >
+              <Users size={12} />
+              <span>Equipe</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('construtoras')}
+              className={`flex-grow flex-shrink-0 min-w-[85px] py-2 text-[10px] font-bold uppercase rounded-xl transition flex items-center justify-center gap-1.5 border ${
+                activeTab === 'construtoras'
+                  ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800 border-transparent'
+              }`}
+            >
+              <Building size={12} />
+              <span>Construtoras</span>
+            </button>
+          </>
         )}
 
         <button
           onClick={() => setActiveTab('profile')}
-          className={`flex-grow py-2 text-[10px] font-bold uppercase rounded-xl transition flex items-center justify-center gap-1.5 border ${
+          className={`flex-grow flex-shrink-0 min-w-[75px] py-2 text-[10px] font-bold uppercase rounded-xl transition flex items-center justify-center gap-1.5 border ${
             activeTab === 'profile'
               ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm'
               : 'text-slate-500 hover:text-slate-800 border-transparent'
@@ -369,6 +384,13 @@ export default function Sidebar({
       {activeTab === 'team' && isMaster && (
         <div className="flex-grow overflow-y-auto p-4 bg-slate-50/10 dark:bg-slate-950/10 flex flex-col">
           <UserManagementTab />
+        </div>
+      )}
+
+      {/* Aba de Controle de Construtoras (Apenas Admin/Master) */}
+      {activeTab === 'construtoras' && isMaster && (
+        <div className="flex-grow overflow-y-auto p-4 bg-slate-50/10 dark:bg-slate-950/10 flex flex-col">
+          <ConstrutorasTab />
         </div>
       )}
 

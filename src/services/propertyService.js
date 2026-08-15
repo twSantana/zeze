@@ -282,3 +282,24 @@ export async function uploadAvatar(file, userId) {
   const { data: urlData } = await supabase.storage.from(bucket).getPublicUrl(path);
   return urlData?.publicUrl || null;
 }
+
+export async function updateConstrutora(id, nome) {
+  assertSupabaseConfigured();
+  const { data, error } = await supabase
+    .from('construtoras')
+    .update({ nome })
+    .eq('id', id)
+    .select();
+  if (error) throw error;
+  return data && data[0] ? data[0] : null;
+}
+
+export async function deleteConstrutora(id) {
+  assertSupabaseConfigured();
+  const { error } = await supabase
+    .from('construtoras')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+  return true;
+}

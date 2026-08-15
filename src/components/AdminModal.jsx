@@ -344,7 +344,7 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
         </div>
 
         {/* Formulário */}
-        <form onSubmit={handleSubmit} className="flex-grow overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh] text-slate-800 dark:text-slate-200">
+        <form onSubmit={handleSubmit} className="flex-grow overflow-y-auto p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-h-[65vh] md:max-h-[70vh] text-slate-800 dark:text-slate-200">
           
           {/* Ficha Técnica */}
           <div className="space-y-4">
