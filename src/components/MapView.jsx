@@ -76,6 +76,18 @@ function MapThemeHandler({ theme }) {
   return null;
 }
 
+// Invalida o tamanho do mapa para corrigir o bug de pin no canto superior esquerdo (out of sync no Leaflet)
+function MapResizeHandler({ properties, hoveredPropertyId }) {
+  const map = useMap();
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [properties, hoveredPropertyId, map]);
+  return null;
+}
+
 function MarkerClusterer({ properties, hoveredPropertyId, onPropertyClick, theme }) {
   const map = useMap();
   const clusterGroupRef = useRef(null);
@@ -244,6 +256,9 @@ export default function MapView({
       >
         {/* Controle dinâmico do Tile do mapa baseado no tema */}
         <MapThemeHandler theme={theme} />
+
+        {/* Invalidador de tamanho para reposicionar pins e evitar bugs de canto esquerdo */}
+        <MapResizeHandler properties={properties} hoveredPropertyId={hoveredPropertyId} />
 
         {/* Gerenciador de Clusters e Marcadores */}
         <MarkerClusterer
