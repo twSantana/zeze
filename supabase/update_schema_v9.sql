@@ -6,7 +6,11 @@
 -- 1. Adicionar coluna 'vendido' à tabela public.empreendimentos
 ALTER TABLE public.empreendimentos ADD COLUMN IF NOT EXISTS vendido BOOLEAN DEFAULT FALSE;
 
--- 2. Recriar a função get_empreendimentos_bbox filtrando imóveis vendidos
+-- 2. Remover a função get_empreendimentos_bbox antiga para evitar conflito de tipo de retorno (Out parameters different)
+DROP FUNCTION IF EXISTS public.get_empreendimentos_bbox(FLOAT, FLOAT, FLOAT, FLOAT);
+DROP FUNCTION IF EXISTS public.get_empreendimentos_bbox(DOUBLE PRECISION, DOUBLE PRECISION, DOUBLE PRECISION, DOUBLE PRECISION);
+
+-- 3. Recriar a função get_empreendimentos_bbox filtrando imóveis vendidos
 CREATE OR REPLACE FUNCTION public.get_empreendimentos_bbox(
     min_lng FLOAT, min_lat FLOAT, max_lng FLOAT, max_lat FLOAT
 )
