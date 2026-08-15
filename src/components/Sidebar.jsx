@@ -112,28 +112,28 @@ export default function Sidebar({
       </div>
 
       {/* Tabs de Controle */}
-      <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 shrink-0 flex gap-1.5 overflow-x-auto scrollbar-none flex-nowrap">
+      <div className="px-2 py-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 shrink-0 flex flex-wrap gap-1">
         <button
           onClick={() => setActiveTab('properties')}
-          className={`flex-grow flex-shrink-0 min-w-[75px] py-2 text-[10px] font-bold uppercase rounded-xl transition flex items-center justify-center gap-1.5 border ${
+          className={`flex-grow flex-shrink-0 min-w-[65px] py-1.5 px-2 text-[9px] font-bold uppercase rounded-xl transition flex items-center justify-center gap-1 border ${
             activeTab === 'properties'
               ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm'
               : 'text-slate-500 hover:text-slate-800 border-transparent'
           }`}
         >
-          <Building size={12} />
+          <Building size={11} />
           <span>Imóveis</span>
         </button>
 
         <button
           onClick={() => setActiveTab('my-properties')}
-          className={`flex-grow flex-shrink-0 min-w-[85px] py-2 text-[10px] font-bold uppercase rounded-xl transition flex items-center justify-center gap-1.5 border ${
+          className={`flex-grow flex-shrink-0 min-w-[75px] py-1.5 px-2 text-[9px] font-bold uppercase rounded-xl transition flex items-center justify-center gap-1 border ${
             activeTab === 'my-properties'
               ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm'
               : 'text-slate-500 hover:text-slate-800 border-transparent'
           }`}
         >
-          <Briefcase size={11} />
+          <Briefcase size={10} />
           <span>Meus Imóveis</span>
         </button>
 
@@ -141,25 +141,25 @@ export default function Sidebar({
           <>
             <button
               onClick={() => setActiveTab('team')}
-              className={`flex-grow flex-shrink-0 min-w-[75px] py-2 text-[10px] font-bold uppercase rounded-xl transition flex items-center justify-center gap-1.5 border ${
+              className={`flex-grow flex-shrink-0 min-w-[65px] py-1.5 px-2 text-[9px] font-bold uppercase rounded-xl transition flex items-center justify-center gap-1 border ${
                 activeTab === 'team'
                   ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm'
                   : 'text-slate-500 hover:text-slate-800 border-transparent'
               }`}
             >
-              <Users size={12} />
+              <Users size={11} />
               <span>Equipe</span>
             </button>
 
             <button
               onClick={() => setActiveTab('construtoras')}
-              className={`flex-grow flex-shrink-0 min-w-[85px] py-2 text-[10px] font-bold uppercase rounded-xl transition flex items-center justify-center gap-1.5 border ${
+              className={`flex-grow flex-shrink-0 min-w-[75px] py-1.5 px-2 text-[9px] font-bold uppercase rounded-xl transition flex items-center justify-center gap-1 border ${
                 activeTab === 'construtoras'
                   ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm'
                   : 'text-slate-500 hover:text-slate-800 border-transparent'
               }`}
             >
-              <Building size={12} />
+              <Building size={11} />
               <span>Construtoras</span>
             </button>
           </>
@@ -167,13 +167,13 @@ export default function Sidebar({
 
         <button
           onClick={() => setActiveTab('profile')}
-          className={`flex-grow flex-shrink-0 min-w-[75px] py-2 text-[10px] font-bold uppercase rounded-xl transition flex items-center justify-center gap-1.5 border ${
+          className={`flex-grow flex-shrink-0 min-w-[65px] py-1.5 px-2 text-[9px] font-bold uppercase rounded-xl transition flex items-center justify-center gap-1 border ${
             activeTab === 'profile'
               ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm'
               : 'text-slate-500 hover:text-slate-800 border-transparent'
           }`}
         >
-          <User size={12} />
+          <User size={11} />
           <span>Perfil</span>
         </button>
       </div>
