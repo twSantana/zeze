@@ -235,6 +235,23 @@ function AppContent({ theme, onThemeToggle }) {
     }
   };
 
+  // Manipulador de atualização do imóvel (Vendido / Reativado)
+  const handlePropertyUpdate = (updatedProperty) => {
+    setRawProperties(prev => {
+      const exists = prev.some(p => p.id === updatedProperty.id);
+      if (updatedProperty.vendido) {
+        return prev.filter(p => p.id !== updatedProperty.id);
+      } else {
+        const updatedWithCoords = { ...updatedProperty, lat: updatedProperty.lat, lng: updatedProperty.lng };
+        if (exists) {
+          return prev.map(p => p.id === updatedProperty.id ? updatedWithCoords : p);
+        } else {
+          return [updatedWithCoords, ...prev];
+        }
+      }
+    });
+  };
+
   // Contato com Consultor Responsável via WhatsApp
   const handleContactClick = (property) => {
     const rawAverb = property.averbacao || '';
@@ -315,6 +332,7 @@ function AppContent({ theme, onThemeToggle }) {
           onContactClick={handleContactClick}
           theme={theme}
           onThemeToggle={onThemeToggle}
+          onPropertyUpdate={handlePropertyUpdate}
         />
       </div>
 

@@ -303,3 +303,24 @@ export async function deleteConstrutora(id) {
   if (error) throw error;
   return true;
 }
+
+export async function getMeusEmpreendimentos(brokerId, userRole) {
+  assertSupabaseConfigured();
+  const { data, error } = await supabase.rpc('get_meus_empreendimentos', {
+    broker_id: brokerId,
+    user_role: userRole
+  });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function togglePropertySold(id, vendidoStatus) {
+  assertSupabaseConfigured();
+  const { data, error } = await supabase
+    .from('empreendimentos')
+    .update({ vendido: vendidoStatus })
+    .eq('id', id)
+    .select();
+  if (error) throw error;
+  return data && data[0] ? data[0] : null;
+}

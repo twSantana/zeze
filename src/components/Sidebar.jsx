@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, SlidersHorizontal, Plus, LogOut, Moon, Sun, 
   Users, Building, MapPin, Phone, Trash2, Mail, Info,
-  User, Camera, Check
+  User, Camera, Check, Briefcase
 } from 'lucide-react';
 import { uploadAvatar } from '../services/propertyService';
 import PropertyCard from './PropertyCard';
 import UserManagementTab from './UserManagementTab';
 import ConstrutorasTab from './ConstrutorasTab';
+import MyPropertiesTab from './MyPropertiesTab';
 import { useAuth } from '../context/AuthContext';
 
 export default function Sidebar({
@@ -22,7 +23,8 @@ export default function Sidebar({
   onDeleteClick,
   onContactClick,
   theme,
-  onThemeToggle
+  onThemeToggle,
+  onPropertyUpdate
 }) {
   const { user, logout, isCorretor, isGerente, isMaster, updateProfile } = useAuth();
   
@@ -121,6 +123,18 @@ export default function Sidebar({
         >
           <Building size={12} />
           <span>Imóveis</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('my-properties')}
+          className={`flex-grow flex-shrink-0 min-w-[85px] py-2 text-[10px] font-bold uppercase rounded-xl transition flex items-center justify-center gap-1.5 border ${
+            activeTab === 'my-properties'
+              ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm'
+              : 'text-slate-500 hover:text-slate-800 border-transparent'
+          }`}
+        >
+          <Briefcase size={11} />
+          <span>Meus Imóveis</span>
         </button>
 
         {isMaster && (
@@ -378,6 +392,16 @@ export default function Sidebar({
             )}
           </div>
         </>
+      )}
+
+      {/* Aba de Controle de Imóveis do Usuário / Vendas */}
+      {activeTab === 'my-properties' && user && (
+        <div className="flex-grow overflow-y-auto p-4 bg-white dark:bg-slate-900 flex flex-col">
+          <MyPropertiesTab 
+            onPropertyUpdate={onPropertyUpdate} 
+            onPropertyClick={onPropertyClick} 
+          />
+        </div>
       )}
 
       {/* Aba de Controle da Equipe (Apenas Admin/Master) */}
