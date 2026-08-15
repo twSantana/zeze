@@ -36,7 +36,6 @@ function AppContent({ theme, onThemeToggle }) {
   // Detalhes do Imóvel
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedPropertyForDetails, setSelectedPropertyForDetails] = useState(null);
-  const [lastFocusedProperty, setLastFocusedProperty] = useState(null);
 
   // Filtros ativos (Completo)
   const [filters, setFilters] = useState({
@@ -151,8 +150,17 @@ function AppContent({ theme, onThemeToggle }) {
     });
     setHoveredPropertyId(property.id);
     setSelectedPropertyForDetails(property);
-    setLastFocusedProperty(property);
     setIsDetailsOpen(true);
+
+    // Garante que o imóvel focado seja inserido temporariamente na lista local
+    // para que ele não suma do mapa ao carregar o bounding box ou fechar o modal
+    setRawProperties(prev => {
+      const exists = prev.some(p => p.id === property.id);
+      if (exists) {
+        return prev.map(p => p.id === property.id ? property : p);
+      }
+      return [property, ...prev];
+    });
   };
 
   // Funções CRUD do Administrador
@@ -340,11 +348,7 @@ function AppContent({ theme, onThemeToggle }) {
 
       <div className="flex-grow h-full relative">
         <MapView
-          properties={
-            lastFocusedProperty && !filteredProperties.some(p => p.id === lastFocusedProperty.id)
-              ? [lastFocusedProperty, ...filteredProperties]
-              : filteredProperties
-          }
+          properties={filteredProperties}
           hoveredPropertyId={hoveredPropertyId}
           onBboxChange={handleBboxChange}
           onPropertyClick={handlePropertyFocus}
