@@ -218,9 +218,12 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
         setFormData(prev => ({
           ...prev,
           lat: result.lat,
-          lng: result.lng
+          lng: result.lng,
+          // Autopreenchimento inteligente do bairro e da cidade se obtidos no geocoding
+          bairro: result.neighborhood || prev.bairro,
+          cidade: result.city || prev.cidade
         }));
-        setCepFeedback('✓ Coordenadas obtidas com sucesso a partir do endereço!');
+        setCepFeedback('✓ Localização e endereço sincronizados!');
       } else {
         setCepFeedback('⚠️ Coordenadas não encontradas automaticamente.');
       }

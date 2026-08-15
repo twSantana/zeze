@@ -115,7 +115,7 @@ export async function geocodeCep(rawCep) {
  * @param {string} postalCode CEP (opcional)
  */
 async function geocodeNominatim(query, postalCode = '') {
-  let url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br';
+  let url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&addressdetails=1';
   
   if (postalCode) {
     // Formata CEP para 00000-000 se necessário
@@ -130,20 +130,30 @@ async function geocodeNominatim(query, postalCode = '') {
   }
 
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        'Accept-Language': 'pt-BR,pt;q=0.9'
+      }
+    });
 
     if (response.ok) {
       const results = await response.json();
       if (results && results.length > 0) {
         const item = results[0];
-        const displayNameParts = item.display_name.split(', ');
+        const addr = item.address || {};
+        
+        // Extrai bairro
+        const neighborhood = addr.suburb || addr.neighbourhood || addr.quarter || addr.hamlet || '';
+        
+        // Extrai cidade
+        const city = addr.city || addr.town || addr.village || addr.municipality || 'Curitiba';
         
         return {
           success: true,
           lat: parseFloat(item.lat),
           lng: parseFloat(item.lon),
-          neighborhood: displayNameParts[1] || '',
-          city: displayNameParts[2] || 'Curitiba'
+          neighborhood,
+          city
         };
       }
     }
