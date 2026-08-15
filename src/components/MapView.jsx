@@ -111,13 +111,17 @@ function MarkerClusterer({ properties, hoveredPropertyId, onPropertyClick, theme
       };
       const pinSvg = getTypeSvg(prop.tipo);
       const isPriority = prop.prioridade;
-      const pinColorClass = isPriority
+      const pinColorClass = prop.vendido
         ? (isHovered 
-            ? 'bg-amber-500 text-slate-950 scale-125 z-[9999] ring-4 ring-amber-500/25 border-amber-300' 
-            : 'bg-gradient-to-tr from-amber-600 to-yellow-400 text-slate-950 border-amber-200 shadow-md shadow-amber-500/10')
-        : (isHovered 
-            ? 'bg-emerald-500 text-white scale-125 z-[9999] ring-4 ring-emerald-500/20' 
-            : 'bg-slate-900 dark:bg-slate-950 text-emerald-400 hover:bg-slate-800');
+            ? 'bg-red-500 text-white scale-125 z-[9999] ring-4 ring-red-500/20 border-red-300' 
+            : 'bg-red-950/60 dark:bg-red-950/80 text-red-400 border-red-900/40 shadow-md')
+        : isPriority
+          ? (isHovered 
+              ? 'bg-amber-500 text-slate-950 scale-125 z-[9999] ring-4 ring-amber-500/25 border-amber-300' 
+              : 'bg-gradient-to-tr from-amber-600 to-yellow-400 text-slate-950 border-amber-200 shadow-md shadow-amber-500/10')
+          : (isHovered 
+              ? 'bg-emerald-500 text-white scale-125 z-[9999] ring-4 ring-emerald-500/20' 
+              : 'bg-slate-900 dark:bg-slate-950 text-emerald-400 hover:bg-slate-800');
 
       const customIcon = L.divIcon({
         className: `custom-pin-container ${isHovered ? 'active-map-pin' : ''}`,
@@ -143,12 +147,16 @@ function MarkerClusterer({ properties, hoveredPropertyId, onPropertyClick, theme
       };
 
       const popupContent = `
-        <div class="flex flex-col w-[260px] bg-white dark:bg-slate-900 overflow-hidden rounded-xl border ${isPriority ? 'border-amber-500' : 'border-transparent'}">
+        <div class="flex flex-col w-[260px] bg-white dark:bg-slate-900 overflow-hidden rounded-xl border ${prop.vendido ? 'border-red-500' : isPriority ? 'border-amber-500' : 'border-transparent'}">
           ${prop.imagem_url ? `
             <div class="h-28 w-full overflow-hidden relative">
               <img src="${prop.imagem_url}" class="w-full h-full object-cover" alt="${prop.titulo}" />
               <div class="absolute top-2 left-2 flex gap-1 z-[100]">
-                ${isPriority ? `
+                ${prop.vendido ? `
+                  <div class="bg-red-650 text-white px-2 py-0.5 text-[9px] font-black rounded-full shadow-md uppercase">
+                    Vendido
+                  </div>
+                ` : isPriority ? `
                   <div class="bg-amber-500 text-slate-950 px-2 py-0.5 text-[9px] font-black rounded-full shadow-md">
                     ★ Prioridade
                   </div>

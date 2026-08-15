@@ -36,6 +36,7 @@ function AppContent({ theme, onThemeToggle }) {
   // Detalhes do Imóvel
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedPropertyForDetails, setSelectedPropertyForDetails] = useState(null);
+  const [lastFocusedProperty, setLastFocusedProperty] = useState(null);
 
   // Filtros ativos (Completo)
   const [filters, setFilters] = useState({
@@ -150,6 +151,7 @@ function AppContent({ theme, onThemeToggle }) {
     });
     setHoveredPropertyId(property.id);
     setSelectedPropertyForDetails(property);
+    setLastFocusedProperty(property);
     setIsDetailsOpen(true);
   };
 
@@ -338,7 +340,11 @@ function AppContent({ theme, onThemeToggle }) {
 
       <div className="flex-grow h-full relative">
         <MapView
-          properties={filteredProperties}
+          properties={
+            lastFocusedProperty && !filteredProperties.some(p => p.id === lastFocusedProperty.id)
+              ? [lastFocusedProperty, ...filteredProperties]
+              : filteredProperties
+          }
           hoveredPropertyId={hoveredPropertyId}
           onBboxChange={handleBboxChange}
           onPropertyClick={handlePropertyFocus}
