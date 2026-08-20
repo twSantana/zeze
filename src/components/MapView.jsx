@@ -61,7 +61,7 @@ function MapFocus({ focusLocation }) {
   return null;
 }
 
-// Controla a troca dinâmica do tema do mapa recarregando a camada de tiles do Leaflet
+// Controla a troca dinâmica do tema do mapa recarregando a camada de tiles do Leaflet (com suporte a Mapbox)
 function MapThemeHandler({ theme }) {
   const map = useMap();
   const tileLayerRef = useRef(null);
@@ -72,13 +72,26 @@ function MapThemeHandler({ theme }) {
       map.removeLayer(tileLayerRef.current);
     }
 
-    const tileUrl = theme === 'dark' 
-      ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-      : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+    const mapboxToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+    let tileUrl;
+    let attribution;
+
+    if (mapboxToken) {
+      const styleId = theme === 'dark' ? 'dark-v11' : 'streets-v12';
+      tileUrl = `https://api.mapbox.com/styles/v1/mapbox/${styleId}/tiles/512/{z}/{x}/{y}@2x?access_token=${mapboxToken}`;
+      attribution = '© <a href="https://www.mapbox.com/about/maps/">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+    } else {
+      tileUrl = theme === 'dark' 
+        ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+      attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+    }
 
     tileLayerRef.current = L.tileLayer(tileUrl, {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      maxZoom: 20
+      attribution,
+      maxZoom: 20,
+      tileSize: mapboxToken ? 512 : 256,
+      zoomOffset: mapboxToken ? -1 : 0
     });
 
     tileLayerRef.current.addTo(map);

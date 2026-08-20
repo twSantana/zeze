@@ -28,9 +28,17 @@ function MapCenterSync({ coords }) {
 function MapThemeSync({ theme }) {
   const map = useMap();
   useEffect(() => {
-    const tileUrl = theme === 'dark' 
-      ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-      : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+    const mapboxToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+    let tileUrl;
+    
+    if (mapboxToken) {
+      const styleId = theme === 'dark' ? 'dark-v11' : 'streets-v12';
+      tileUrl = `https://api.mapbox.com/styles/v1/mapbox/${styleId}/tiles/512/{z}/{x}/{y}@2x?access_token=${mapboxToken}`;
+    } else {
+      tileUrl = theme === 'dark' 
+        ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+    }
       
     map.eachLayer(layer => {
       if (layer instanceof L.TileLayer) {
@@ -880,7 +888,18 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
                   className="w-full h-full"
                 >
                   <TileLayer
-                    url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                    url={
+                      import.meta.env.VITE_MAPBOX_ACCESS_TOKEN
+                        ? `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/512/{z}/{x}/{y}@2x?access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}`
+                        : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                    }
+                    attribution={
+                      import.meta.env.VITE_MAPBOX_ACCESS_TOKEN
+                        ? '© Mapbox'
+                        : '© OpenStreetMap'
+                    }
+                    tileSize={import.meta.env.VITE_MAPBOX_ACCESS_TOKEN ? 512 : 256}
+                    zoomOffset={import.meta.env.VITE_MAPBOX_ACCESS_TOKEN ? -1 : 0}
                   />
                   <Marker position={[formData.lat, formData.lng]} />
                   <MapClickHandler onLocationSelect={handleMapClick} />
