@@ -180,9 +180,9 @@ export default function Sidebar({
 
       {/* Exibição da Aba de Imóveis (Properties) */}
       {activeTab === 'properties' && (
-        <>
+        <div className="flex-grow overflow-y-auto flex flex-col bg-slate-50/10 dark:bg-slate-950/5">
           {/* Painel de Filtros Avançados */}
-          <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/10 shrink-0">
+          <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/10">
             <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-bold text-xs uppercase tracking-wider mb-3">
               <SlidersHorizontal size={14} className="text-emerald-500" />
               <span>Busca e Filtros</span>
@@ -346,7 +346,7 @@ export default function Sidebar({
           </div>
 
           {/* Resultados e Botão Novo Imóvel */}
-          <div className="p-4 flex items-center justify-between border-b border-slate-50 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+          <div className="p-4 flex items-center justify-between border-b border-slate-50 dark:border-slate-800 bg-white dark:bg-slate-900">
             <div>
               <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
                 {properties.length} {properties.length === 1 ? 'imóvel filtrado' : 'imóveis filtrados'}
@@ -366,7 +366,7 @@ export default function Sidebar({
           </div>
 
           {/* Listagem */}
-          <div className="flex-grow overflow-y-auto p-4 space-y-4 bg-slate-50/30 dark:bg-slate-950/10">
+          <div className="p-4 space-y-4 bg-slate-50/30 dark:bg-slate-950/10">
             {properties.length > 0 ? (
               properties.map(property => (
                 <PropertyCard
@@ -391,7 +391,7 @@ export default function Sidebar({
               </div>
             )}
           </div>
-        </>
+        </div>
       )}
 
       {/* Aba de Controle de Imóveis do Usuário / Vendas */}

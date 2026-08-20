@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import MapView from './components/MapView';
 import Sidebar from './components/Sidebar';
@@ -36,6 +36,7 @@ function AppContent({ theme, onThemeToggle }) {
   // Detalhes do Imóvel
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedPropertyForDetails, setSelectedPropertyForDetails] = useState(null);
+  const [clickedProperties, setClickedProperties] = useState([]);
 
   // Filtros ativos (Completo)
   const [filters, setFilters] = useState({
@@ -51,11 +52,19 @@ function AppContent({ theme, onThemeToggle }) {
   });
 
   // 1. Carrega dados do Bounding Box quando o mapa se move
-  const fetchPropertiesInBbox = async (currentBbox) => {
+  const fetchPropertiesInBbox = async (currentBbox, clickedList) => {
     if (!currentBbox) return;
     try {
       const data = await getPropertiesBbox(currentBbox);
-      setRawProperties(data);
+      setRawProperties(prev => {
+        const merged = [...data];
+        clickedList.forEach(clicked => {
+          if (!merged.some(p => p.id === clicked.id)) {
+            merged.push(clicked);
+          }
+        });
+        return merged;
+      });
     } catch (err) {
       console.error('Erro ao buscar imóveis:', err);
     }
@@ -63,9 +72,9 @@ function AppContent({ theme, onThemeToggle }) {
 
   useEffect(() => {
     if (bbox && user) {
-      fetchPropertiesInBbox(bbox);
+      fetchPropertiesInBbox(bbox, clickedProperties);
     }
-  }, [bbox, user]);
+  }, [bbox, user, clickedProperties]);
 
   // 2. Aplica filtros locais (Preço, Tipo, Quartos, Cidade, Busca Textual, Vagas e Área)
   useEffect(() => {
@@ -152,6 +161,15 @@ function AppContent({ theme, onThemeToggle }) {
     setSelectedPropertyForDetails(property);
     setIsDetailsOpen(true);
 
+    // Salva o imóvel focado na lista de clicados persistente para esta sessão
+    setClickedProperties(prev => {
+      const exists = prev.some(p => p.id === property.id);
+      if (exists) {
+        return prev.map(p => p.id === property.id ? property : p);
+      }
+      return [...prev, property];
+    });
+
     // Garante que o imóvel focado seja inserido temporariamente na lista local
     // para que ele não suma do mapa ao carregar o bounding box ou fechar o modal
     setRawProperties(prev => {
@@ -187,6 +205,7 @@ function AppContent({ theme, onThemeToggle }) {
       try {
         await deleteProperty(id);
         setRawProperties(prev => prev.filter(p => p.id !== id));
+        setClickedProperties(prev => prev.filter(p => p.id !== id));
       } catch (err) {
         alert('Erro ao excluir imóvel.');
       }
@@ -201,6 +220,9 @@ function AppContent({ theme, onThemeToggle }) {
         setRawProperties(prev => 
           prev.map(p => p.id === propertyToEdit.id ? updatedWithCoords : p)
         );
+        setClickedProperties(prev => 
+          prev.map(p => p.id === propertyToEdit.id ? updatedWithCoords : p)
+        );
 
         // Handle uploaded images when editing
         if (formData.images && formData.images.length > 0) {
@@ -210,6 +232,7 @@ function AppContent({ theme, onThemeToggle }) {
             const updatedWithCover = await updateProperty(propertyToEdit.id, { ...formData, imagem_url: first.url });
             const updatedWithCoverCoords = { ...updatedWithCover, lat: formData.lat, lng: formData.lng };
             setRawProperties(prev => prev.map(p => p.id === propertyToEdit.id ? updatedWithCoverCoords : p));
+            setClickedProperties(prev => prev.map(p => p.id === propertyToEdit.id ? updatedWithCoverCoords : p));
             handlePropertyFocus(updatedWithCoverCoords);
           } else {
             handlePropertyFocus(updatedWithCoords);
@@ -247,12 +270,14 @@ function AppContent({ theme, onThemeToggle }) {
 
   // Manipulador de atualização do imóvel (Vendido / Reativado)
   const handlePropertyUpdate = (updatedProperty) => {
+    const updatedWithCoords = { ...updatedProperty, lat: updatedProperty.lat, lng: updatedProperty.lng };
+    setClickedProperties(prev => prev.map(p => p.id === updatedProperty.id ? updatedWithCoords : p));
+
     setRawProperties(prev => {
       const exists = prev.some(p => p.id === updatedProperty.id);
       if (updatedProperty.vendido) {
         return prev.filter(p => p.id !== updatedProperty.id);
       } else {
-        const updatedWithCoords = { ...updatedProperty, lat: updatedProperty.lat, lng: updatedProperty.lng };
         if (exists) {
           return prev.map(p => p.id === updatedProperty.id ? updatedWithCoords : p);
         } else {
@@ -439,6 +464,8 @@ function AppContent({ theme, onThemeToggle }) {
         }}
         property={selectedPropertyForDetails}
         onContactClick={handleContactClick}
+        onEdit={handleEditClick}
+        onDelete={handleDeleteClick}
       />
 
       {/* Modal de Primeiro Acesso - Cadastro Obrigatório de WhatsApp */}

@@ -2,13 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, MapPin, BedDouble, Car, Maximize, 
   ExternalLink, ShieldCheck, FileText, Star, Landmark, Award,
-  ChevronLeft, ChevronRight, FolderOpen
+  ChevronLeft, ChevronRight, FolderOpen, Edit3, Trash2
 } from 'lucide-react';
 import { getPropertyImages } from '../services/propertyService';
+import { useAuth } from '../context/AuthContext';
 
-export default function PropertyDetailModal({ isOpen, onClose, property, onContactClick }) {
+export default function PropertyDetailModal({ isOpen, onClose, property, onContactClick, onEdit, onDelete }) {
+  const { user, isGerente, isMaster } = useAuth();
   const [images, setImages] = useState([]);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  const canEdit = property && (property.created_by === user?.id || isGerente || isMaster);
+  const canDelete = isMaster;
 
   useEffect(() => {
     if (isOpen && property?.id) {
@@ -149,72 +154,70 @@ export default function PropertyDetailModal({ isOpen, onClose, property, onConta
         </button>
 
         {/* Lado Esquerdo: Imagem Principal e Galeria */}
-        <div className="w-full md:w-1/2 flex flex-col bg-slate-50 dark:bg-slate-955/30 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800/60 p-4 md:p-6 shrink-0 justify-between aspect-video md:aspect-auto md:h-full overflow-y-auto">
-          <div className="w-full h-full flex flex-col gap-4">
-            <div className="w-full h-44 md:h-[320px] rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-950/50 border border-slate-150 dark:border-slate-850 relative group/img">
-              {currentImageUrl ? (
-                <img 
-                  src={currentImageUrl} 
-                  alt={property.titulo} 
-                  className="w-full h-full object-cover transition-all duration-300"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-slate-400">
-                  Sem imagem disponível
-                </div>
-              )}
+        <div className="w-full md:w-1/2 relative bg-slate-900 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800/60 shrink-0 aspect-video md:aspect-auto md:h-full overflow-hidden">
+          <div className="w-full h-full relative group/img">
+            {currentImageUrl ? (
+              <img 
+                src={currentImageUrl} 
+                alt={property.titulo} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-slate-400">
+                Sem imagem disponível
+              </div>
+            )}
 
-              {/* Botões de Navegação do Carrossel */}
-              {allImages.length > 1 && (
-                <>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActiveImageIndex((prev) => (prev === 0 ? allImages.length - 1 : prev - 1));
-                    }}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-slate-900/60 text-white hover:bg-slate-900/90 hover:scale-105 opacity-0 group-hover/img:opacity-100 transition z-10"
-                    title="Anterior"
-                  >
-                    <ChevronLeft size={20} />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActiveImageIndex((prev) => (prev === allImages.length - 1 ? 0 : prev + 1));
-                    }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-slate-900/60 text-white hover:bg-slate-900/90 hover:scale-105 opacity-0 group-hover/img:opacity-100 transition z-10"
-                    title="Próxima"
-                  >
-                    <ChevronRight size={20} />
-                  </button>
-
-                  {/* Indicador de posição do carrossel */}
-                  <div className="absolute bottom-3 right-3 px-2 py-0.5 rounded-full bg-slate-900/60 text-white text-[9px] font-black tracking-wider z-10 select-none">
-                    {activeImageIndex + 1} / {allImages.length}
-                  </div>
-                </>
-              )}
-
-              {/* Tag Prioridade Flutuante na Imagem */}
-              {property.prioridade && (
-                <div className="absolute top-3 left-3 bg-amber-500 text-slate-950 px-3 py-1 text-[10px] font-black rounded-full shadow-lg border border-amber-300 flex items-center gap-1 z-10 select-none">
-                  <Star size={11} className="fill-slate-950 stroke-none" />
-                  <span>DESTAQUE</span>
-                </div>
-              )}
-            </div>
-
-            {/* Carrossel/Thumbnails */}
+            {/* Botões de Navegação do Carrossel */}
             {allImages.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveImageIndex((prev) => (prev === 0 ? allImages.length - 1 : prev - 1));
+                  }}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-slate-950/60 text-white hover:bg-slate-950/90 hover:scale-105 transition z-10 border border-white/10"
+                  title="Anterior"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveImageIndex((prev) => (prev === allImages.length - 1 ? 0 : prev + 1));
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-slate-950/60 text-white hover:bg-slate-950/90 hover:scale-105 transition z-10 border border-white/10"
+                  title="Próxima"
+                >
+                  <ChevronRight size={20} />
+                </button>
+
+                {/* Indicador de posição do carrossel */}
+                <div className="absolute top-3 right-12 px-2.5 py-1 rounded-full bg-slate-950/70 text-white text-[9px] font-black tracking-wider z-10 select-none border border-white/10">
+                  {activeImageIndex + 1} / {allImages.length}
+                </div>
+              </>
+            )}
+
+            {/* Tag Prioridade Flutuante na Imagem */}
+            {property.prioridade && (
+              <div className="absolute top-3 left-3 bg-amber-500 text-slate-950 px-3 py-1.5 text-[10px] font-black rounded-full shadow-lg border border-amber-300 flex items-center gap-1 z-10 select-none">
+                <Star size={11} className="fill-slate-950 stroke-none" />
+                <span>DESTAQUE</span>
+              </div>
+            )}
+
+            {/* Galeria de Miniaturas Flutuante na Base da Imagem */}
+            {allImages.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 max-w-[90%] px-3 py-2 rounded-2xl bg-slate-950/65 backdrop-blur-md border border-white/10 flex gap-2 overflow-x-auto scrollbar-none z-15">
                 {allImages.map((img, idx) => (
                   <button
                     key={img.id || idx}
                     onClick={() => setActiveImageIndex(idx)}
-                    className={`w-16 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition ${
+                    className={`w-11 h-11 rounded-lg overflow-hidden border-2 shrink-0 transition ${
                       activeImageIndex === idx 
-                        ? 'border-emerald-500 scale-95 shadow-sm' 
-                        : 'border-slate-200 dark:border-slate-800 opacity-60 hover:opacity-100'
+                        ? 'border-emerald-500 scale-95 shadow-sm shadow-emerald-500/30' 
+                        : 'border-transparent opacity-65 hover:opacity-100'
                     }`}
                   >
                     <img src={img.url} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
@@ -363,6 +366,36 @@ export default function PropertyDetailModal({ isOpen, onClose, property, onConta
               >
                 <span>Falar com Consultor</span>
               </button>
+            )}
+
+            {/* Ações Administrativas (Editar/Excluir) */}
+            {(canEdit || canDelete) && (
+              <div className="flex gap-3 w-full mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                {canEdit && (
+                  <button
+                    onClick={() => {
+                      onClose();
+                      onEdit(property);
+                    }}
+                    className="flex-grow py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-750 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 border border-slate-200/40 dark:border-slate-850 transition"
+                  >
+                    <Edit3 size={13} />
+                    <span>Editar</span>
+                  </button>
+                )}
+                {canDelete && (
+                  <button
+                    onClick={() => {
+                      onClose();
+                      onDelete(property.id);
+                    }}
+                    className="flex-grow py-2.5 px-4 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-955/20 dark:hover:bg-red-900/30 text-red-650 dark:text-red-400 text-xs font-bold flex items-center justify-center gap-1.5 border border-red-200/40 dark:border-red-900/20 transition"
+                  >
+                    <Trash2 size={13} />
+                    <span>Excluir</span>
+                  </button>
+                )}
+              </div>
             )}
           </div>
 
