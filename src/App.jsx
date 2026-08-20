@@ -11,7 +11,7 @@ import { getPropertiesBbox, addProperty, updateProperty, deleteProperty, uploadP
 import { Building, Plus } from 'lucide-react';
 
 function AppContent({ theme, onThemeToggle }) {
-  const { user, loading, isGerente, isMaster, isCorretor, supabaseError, profiles, updateProfile } = useAuth();
+  const { user, loading, isGerente, isMaster, isCorretor, supabaseError, isSupabaseConfigured, profiles, updateProfile } = useAuth();
   
   // Estados de dados e mapa
   const [rawProperties, setRawProperties] = useState([]);
@@ -327,15 +327,15 @@ function AppContent({ theme, onThemeToggle }) {
     );
   }
 
-  // Mostra mensagem de erro amigável quando Supabase não está configurado corretamente
-  if (supabaseError) {
+  // Mostra mensagem de erro amigável quando o Supabase não está configurado nas variáveis de ambiente
+  if (!isSupabaseConfigured) {
     return (
       <div className="w-screen h-screen flex flex-col items-center justify-center bg-slate-900 text-white font-sans gap-4 p-6">
         <div className="p-4 rounded-2xl bg-red-600 text-white">
           <strong>Atenção:</strong>
         </div>
         <h2 className="text-lg font-bold">Erro na configuração do Supabase</h2>
-        <p className="text-sm text-slate-300 max-w-xl text-center">{supabaseError}</p>
+        <p className="text-sm text-slate-300 max-w-xl text-center">Supabase não configurado corretamente. Verifique as variáveis de ambiente.</p>
         <div className="text-sm text-slate-400 max-w-xl text-center mt-3">
           Verifique as variáveis de ambiente <strong>VITE_SUPABASE_URL</strong> e <strong>VITE_SUPABASE_ANON_KEY</strong> no painel do Vercel ou no arquivo <strong>.env</strong> local.
         </div>

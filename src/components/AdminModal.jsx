@@ -90,6 +90,38 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
     }
   }, [isOpen]);
 
+  const resetToDefault = () => {
+    setFormData({
+      titulo: '',
+      tipo: 'Apartamento',
+      status: 'Lançamento',
+      preco: '',
+      quartos: 2,
+      vagas: 1,
+      area_m2: '',
+      imagem_url: '',
+      cep: '',
+      endereco: '',
+      bairro: '',
+      cidade: 'Curitiba',
+      conteudo_url: '',
+      lat: -25.4372,
+      lng: -49.2700,
+      prioridade: false,
+      observacoes: '',
+      averbacao: '',
+      quartos_max: '',
+      vagas_max: '',
+      area_max_m2: '',
+      drive_url: ''
+    });
+    setCepFeedback('');
+    setRespType('corretor-self');
+    setSelectedBroker('');
+    setSelectedConstrutora('');
+  };
+
+  // Carrega ou inicializa o formulário (recuperando rascunhos para novos cadastros)
   useEffect(() => {
     if (propertyToEdit) {
       setFormData({
@@ -118,7 +150,6 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
       });
       setCepFeedback('Coordenadas originais carregadas.');
 
-      // Parseia Averbação
       const rawAverb = propertyToEdit.averbacao || '';
       if (rawAverb.startsWith('Corretor: ')) {
         const brokerVal = rawAverb.replace('Corretor: ', '');
@@ -133,42 +164,47 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
         setSelectedConstrutora(rawAverb.replace('Construtora: ', ''));
       } else if (rawAverb) {
         setRespType('manual');
-        // Mantém o texto no input
       } else {
         setRespType('corretor-self');
       }
     } else {
-      setFormData({
-        titulo: '',
-        tipo: 'Apartamento',
-        status: 'Lançamento',
-        preco: '',
-        quartos: 2,
-        vagas: 1,
-        area_m2: '',
-        imagem_url: '',
-        cep: '',
-        endereco: '',
-        bairro: '',
-        cidade: 'Curitiba',
-        conteudo_url: '',
-        lat: -25.4372,
-        lng: -49.2700,
-        prioridade: false,
-        observacoes: '',
-        averbacao: '',
-        quartos_max: '',
-        vagas_max: '',
-        area_max_m2: '',
-        drive_url: ''
-      });
-      setCepFeedback('');
-      setRespType('corretor-self');
-      setSelectedBroker('');
-      setSelectedConstrutora('');
+      // Tenta recuperar rascunho anterior de novo imóvel do localStorage
+      const saved = localStorage.getItem('property_draft');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.formData) {
+            setFormData(parsed.formData);
+            setRespType(parsed.respType || 'corretor-self');
+            setSelectedBroker(parsed.selectedBroker || '');
+            setSelectedConstrutora(parsed.selectedConstrutora || '');
+            setCepFeedback('Rascunho recuperado automaticamente.');
+          } else {
+            resetToDefault();
+          }
+        } catch (e) {
+          console.error('Erro ao ler rascunho do localStorage:', e);
+          resetToDefault();
+        }
+      } else {
+        resetToDefault();
+      }
     }
     setErrorMsg('');
   }, [propertyToEdit, isOpen, user]);
+
+  // Salva o rascunho em localStorage quando o usuário altera os campos de um novo imóvel
+  useEffect(() => {
+    if (isOpen && !propertyToEdit) {
+      const draft = {
+        formData,
+        respType,
+        selectedBroker,
+        selectedConstrutora
+      };
+      localStorage.setItem('property_draft', JSON.stringify(draft));
+    }
+  }, [formData, respType, selectedBroker, selectedConstrutora, isOpen, propertyToEdit]);
 
   if (!isOpen) return null;
 
@@ -312,6 +348,11 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
 
     // Pass selectedFiles to parent for upload handling
     onSave({ ...formData, averbacao: computedAverbacao, images: selectedFiles });
+
+    // Limpa o rascunho de novo cadastro
+    if (!propertyToEdit) {
+      localStorage.removeItem('property_draft');
+    }
   };
 
   const handleFilesSelected = (e) => {
@@ -853,6 +894,20 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
 
           {/* Footer de Controles */}
           <div className="col-span-1 md:col-span-2 border-t border-slate-100 dark:border-slate-800 pt-4 flex gap-3 justify-end shrink-0">
+            {!propertyToEdit && localStorage.getItem('property_draft') && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm('Deseja realmente limpar todos os campos digitados?')) {
+                    localStorage.removeItem('property_draft');
+                    resetToDefault();
+                  }
+                }}
+                className="mr-auto px-4 py-2.5 rounded-xl border border-red-200 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-955/20 text-red-600 dark:text-red-400 text-xs font-bold transition"
+              >
+                Limpar Campos
+              </button>
+            )}
             <button
               type="button"
               onClick={onClose}

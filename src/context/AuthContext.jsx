@@ -314,7 +314,8 @@ export function AuthProvider({ children }) {
     isGerente: user?.role === 'gerente' || user?.role === 'master',
     isMaster: user?.role === 'master',
     isCorretor: user?.role === 'corretor' || user?.role === 'gerente' || user?.role === 'master',
-    supabaseError
+    supabaseError,
+    isSupabaseConfigured
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
