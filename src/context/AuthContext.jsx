@@ -43,9 +43,6 @@ export function AuthProvider({ children }) {
         }
       });
 
-      // Carrega perfis do Supabase
-      fetchSupabaseProfiles();
-
       return () => {
         subscription.unsubscribe();
       };
@@ -128,6 +125,7 @@ export function AuthProvider({ children }) {
 
       console.log('[DEBUG AUTH] setUser ativo:', sessionUser);
       setUser(sessionUser);
+      fetchSupabaseProfiles();
       return true;
     } catch (err) {
       console.error('[DEBUG AUTH] Erro ao obter perfil no Supabase:', err);
