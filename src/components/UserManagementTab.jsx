@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { UserPlus, Edit2, Trash2, Check, X, Shield, Users, Mail, ToggleLeft, ToggleRight, Key } from 'lucide-react';
 
 export default function UserManagementTab() {
-  const { profiles, addProfile, updateProfile, deleteProfile, user: currentUser } = useAuth();
+  const { profiles, addProfile, updateProfile, deleteProfile, resetPassword, user: currentUser } = useAuth();
   
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingUserId, setEditingUserId] = useState(null);
@@ -13,6 +13,7 @@ export default function UserManagementTab() {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('corretor');
   const [password, setPassword] = useState('');
+  const [sendInvite, setSendInvite] = useState(true);
   
   const [editName, setEditName] = useState('');
   const [editRole, setEditRole] = useState('corretor');
@@ -26,30 +27,64 @@ export default function UserManagementTab() {
     setErrorMsg('');
     setSuccessMsg('');
 
-    if (!name || !email || !password) {
-      setErrorMsg('Por favor, preencha todos os campos obrigatórios (incluindo a senha).');
+    if (!name || !email) {
+      setErrorMsg('Por favor, preencha os campos obrigatórios (Nome e E-mail).');
       return;
     }
 
+    if (!password && !sendInvite) {
+      setErrorMsg('Por favor, defina uma senha ou ative o envio de convite por e-mail.');
+      return;
+    }
+
+    const tempPassword = password || Math.random().toString(36).slice(-10) + 'A1!';
+
     try {
+      const emailClean = email.trim().toLowerCase();
       await addProfile({
         nome: name,
-        email: email.trim().toLowerCase(),
+        email: emailClean,
         role: role,
-        senha: password, // Repassado para criação de login no Supabase Auth
+        senha: tempPassword,
         ativo: true
       });
       
+      if (sendInvite) {
+        try {
+          await resetPassword(emailClean);
+        } catch (inviteErr) {
+          console.warn('Erro ao disparar e-mail de convite, mas perfil foi criado:', inviteErr);
+        }
+      }
+
       // Reseta formulário
       setName('');
       setEmail('');
       setPassword('');
       setRole('corretor');
+      setSendInvite(true);
       setShowAddForm(false);
-      setSuccessMsg('Consultor cadastrado com sucesso no sistema e no Supabase!');
-      setTimeout(() => setSuccessMsg(''), 4000);
+      setSuccessMsg(sendInvite 
+        ? 'Consultor cadastrado e convite de senha enviado por e-mail!' 
+        : 'Consultor cadastrado com sucesso no sistema e no Supabase!'
+      );
+      setTimeout(() => setSuccessMsg(''), 5000);
     } catch (err) {
       setErrorMsg(err.message || 'Erro ao cadastrar consultor.');
+    }
+  };
+
+  const handleResetPassword = async (email) => {
+    if (window.confirm(`Deseja enviar um e-mail de redefinição de senha para "${email}"?`)) {
+      setErrorMsg('');
+      setSuccessMsg('');
+      try {
+        await resetPassword(email);
+        setSuccessMsg(`E-mail de redefinição enviado com sucesso para ${email}!`);
+        setTimeout(() => setSuccessMsg(''), 4000);
+      } catch (err) {
+        setErrorMsg(err.message || 'Erro ao enviar e-mail de redefinição.');
+      }
     }
   };
 
@@ -185,21 +220,34 @@ export default function UserManagementTab() {
             </div>
 
             <div className="flex flex-col gap-0.5">
-              <label className="text-[9px] font-bold text-slate-400 uppercase">Senha de Acesso</label>
+              <label className="text-[9px] font-bold text-slate-400 uppercase">Senha de Acesso {sendInvite ? '(Opcional)' : ''}</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Defina a senha"
+                placeholder={sendInvite ? "Gerada automaticamente se vazio" : "Defina a senha"}
                 className="text-[11px] border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
-                required
+                required={!sendInvite}
               />
             </div>
           </div>
 
+          <div className="flex items-center gap-2 py-1 px-1">
+            <input
+              type="checkbox"
+              id="sendInvite"
+              checked={sendInvite}
+              onChange={(e) => setSendInvite(e.target.checked)}
+              className="accent-emerald-500 w-3.5 h-3.5 cursor-pointer rounded"
+            />
+            <label htmlFor="sendInvite" className="text-[10px] font-bold text-slate-650 dark:text-slate-400 cursor-pointer select-none">
+              ✉️ Enviar convite por e-mail para o consultor definir a própria senha
+            </label>
+          </div>
+
           <button
             type="submit"
-            className="mt-2 py-2 rounded-lg bg-slate-900 dark:bg-slate-850 hover:bg-slate-800 text-white font-bold text-[10px] transition uppercase tracking-wider"
+            className="mt-1 py-2 rounded-lg bg-slate-900 dark:bg-slate-850 hover:bg-slate-800 text-white font-bold text-[10px] transition uppercase tracking-wider"
           >
             Cadastrar Consultor
           </button>
@@ -323,6 +371,13 @@ export default function UserManagementTab() {
 
                   {/* Controles */}
                   <div className="flex gap-1">
+                    <button
+                      onClick={() => handleResetPassword(p.email)}
+                      className="p-1 rounded-lg border border-slate-100 dark:border-slate-850 text-slate-500 hover:text-amber-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                      title="Enviar Redefinição de Senha por E-mail"
+                    >
+                      <Key size={12} />
+                    </button>
                     <button
                       onClick={() => handleStartEdit(p)}
                       className="p-1 rounded-lg border border-slate-100 dark:border-slate-850 text-slate-500 hover:text-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition"

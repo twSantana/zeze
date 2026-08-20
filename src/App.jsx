@@ -8,11 +8,55 @@ import AdminModal from './components/AdminModal';
 import LeadModal from './components/LeadModal';
 import PropertyDetailModal from './components/PropertyDetailModal';
 import { getPropertiesBbox, addProperty, updateProperty, deleteProperty, uploadPropertyImages } from './services/propertyService';
-import { Building, Plus } from 'lucide-react';
+import { Building, Plus, Key } from 'lucide-react';
+import { supabase } from './services/supabase';
 
 function AppContent({ theme, onThemeToggle }) {
   const { user, loading, isGerente, isMaster, isCorretor, supabaseError, isSupabaseConfigured, profiles, updateProfile } = useAuth();
   
+  // Recuperação de Senha
+  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [resetError, setResetError] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      const search = window.location.search;
+      
+      if (
+        (hash && (hash.includes('type=recovery') || hash.includes('recovery'))) ||
+        (search && (search.includes('type=recovery') || search.includes('recovery')))
+      ) {
+        setIsResetPasswordOpen(true);
+        window.location.hash = '';
+      }
+    };
+
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  const handleSaveNewPassword = async (e) => {
+    e.preventDefault();
+    setResetError('');
+    setResetLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      alert('Sua senha foi redefinida com sucesso! Bem-vindo de volta.');
+      setIsResetPasswordOpen(false);
+      setNewPassword('');
+      window.location.reload();
+    } catch (err) {
+      setResetError(err.message || 'Erro ao redefinir a senha. Tente novamente.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   // Estados de dados e mapa
   const [rawProperties, setRawProperties] = useState([]);
   const [filteredProperties, setFilteredProperties] = useState([]);
@@ -468,6 +512,50 @@ function AppContent({ theme, onThemeToggle }) {
         onEdit={handleEditClick}
         onDelete={handleDeleteClick}
       />
+
+      {/* Modal de Redefinição de Senha (Password Recovery) */}
+      {isResetPasswordOpen && (
+        <div className="fixed inset-0 z-[999999] bg-slate-950/95 backdrop-blur-lg flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md p-6 shadow-2xl border border-slate-200 dark:border-slate-800 animate-fadeIn">
+            <div className="text-center mb-5">
+              <div className="w-14 h-14 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Key className="w-7 h-7 text-emerald-500 animate-pulse" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-850 dark:text-slate-100">Criar Nova Senha</h3>
+              <p className="text-xs text-slate-500 mt-1">Insira sua nova senha de acesso abaixo para entrar no sistema.</p>
+            </div>
+            
+            <form onSubmit={handleSaveNewPassword} className="space-y-4">
+              {resetError && (
+                <div className="p-3 bg-red-50 text-red-650 rounded-xl text-xs font-bold border border-red-100">
+                  {resetError}
+                </div>
+              )}
+              
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Nova Senha *</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 text-slate-850 dark:text-slate-100 bg-white dark:bg-slate-955 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
+                  required
+                  minLength={6}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={resetLoading}
+                className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black rounded-2xl flex items-center justify-center gap-1.5 transition-all shadow-md shadow-emerald-500/10"
+              >
+                {resetLoading ? 'Salvando...' : 'Salvar e Entrar'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Primeiro Acesso - Cadastro Obrigatório de WhatsApp */}
       {user && !user.whatsapp_configured && (

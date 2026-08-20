@@ -302,6 +302,14 @@ export function AuthProvider({ children }) {
     return true;
   };
 
+  const resetPassword = async (email) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin
+    });
+    if (error) throw error;
+    return true;
+  };
+
   const value = {
     user,
     loading,
@@ -315,7 +323,8 @@ export function AuthProvider({ children }) {
     isMaster: user?.role === 'master',
     isCorretor: user?.role === 'corretor' || user?.role === 'gerente' || user?.role === 'master',
     supabaseError,
-    isSupabaseConfigured
+    isSupabaseConfigured,
+    resetPassword
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
