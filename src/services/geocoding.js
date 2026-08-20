@@ -86,9 +86,9 @@ export async function geocodeCep(rawCep) {
     console.warn('Erro ao consultar ViaCEP:', error);
   }
 
-  // 3. Fallback final: Geocodificar apenas o CEP direto no Nominatim
+  // 3. Fallback final: Geocodificar apenas o CEP direto no geocodificador
   try {
-    const coords = await geocodeNominatim('', cep);
+    const coords = await geocodeProvider('', cep);
     if (coords.success) {
       return {
         success: true,
@@ -99,26 +99,81 @@ export async function geocodeCep(rawCep) {
         state: 'PR',
         lat: coords.lat,
         lng: coords.lng,
-        source: 'Nominatim (Apenas CEP)'
+        source: coords.source || 'Nominatim (Apenas CEP)'
       };
     }
   } catch (err) {
-    console.error('Erro de fallback final no Nominatim:', err);
+    console.error('Erro de fallback final no geocodificador:', err);
   }
 
   return { success: false, error: 'Não foi possível encontrar a localização para este CEP.' };
 }
 
 /**
- * Consulta geocodificação no Nominatim (OpenStreetMap)
+ * Consulta geocodificação usando Mapbox API ou Nominatim (OSM)
  * @param {string} query Endereço completo para consulta
  * @param {string} postalCode CEP (opcional)
  */
-async function geocodeNominatim(query, postalCode = '') {
+async function geocodeProvider(query, postalCode = '') {
+  const mapboxToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+
+  if (mapboxToken) {
+    let searchQuery = query;
+    if (postalCode) {
+      // Usa o CEP diretamente para geocodificação no Mapbox
+      searchQuery = postalCode;
+    }
+
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${mapboxToken}&country=br&limit=1`;
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'Accept-Language': 'pt-BR'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.features && data.features.length > 0) {
+          const item = data.features[0];
+          const [lng, lat] = item.center;
+
+          let neighborhood = '';
+          let city = '';
+
+          if (item.context) {
+            item.context.forEach(ctx => {
+              if (ctx.id.startsWith('neighborhood') || ctx.id.startsWith('suburb')) {
+                neighborhood = ctx.text;
+              } else if (ctx.id.startsWith('place')) {
+                city = ctx.text;
+              }
+            });
+          }
+
+          if (item.place_type && item.place_type.includes('neighborhood')) {
+            neighborhood = item.text;
+          }
+
+          return {
+            success: true,
+            lat,
+            lng,
+            neighborhood,
+            city: city || 'Curitiba',
+            source: 'Mapbox API'
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Erro na geocodificação Mapbox:', error);
+    }
+  }
+
+  // Fallback para Nominatim (OSM)
   let url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&addressdetails=1';
   
   if (postalCode) {
-    // Formata CEP para 00000-000 se necessário
     const formattedCep = postalCode.length === 8 
       ? `${postalCode.slice(0, 5)}-${postalCode.slice(5)}` 
       : postalCode;
@@ -141,11 +196,7 @@ async function geocodeNominatim(query, postalCode = '') {
       if (results && results.length > 0) {
         const item = results[0];
         const addr = item.address || {};
-        
-        // Extrai bairro
         const neighborhood = addr.suburb || addr.neighbourhood || addr.quarter || addr.hamlet || '';
-        
-        // Extrai cidade
         const city = addr.city || addr.town || addr.village || addr.municipality || 'Curitiba';
         
         return {
@@ -153,7 +204,8 @@ async function geocodeNominatim(query, postalCode = '') {
           lat: parseFloat(item.lat),
           lng: parseFloat(item.lon),
           neighborhood,
-          city
+          city,
+          source: 'Nominatim (OSM)'
         };
       }
     }
@@ -183,7 +235,7 @@ export async function geocodeAddress(street, neighborhood = '', city = 'Curitiba
   let addressQuery = `${cleanStreet}${cleanNeighborhood ? `, ${cleanNeighborhood}` : ''}, ${cleanCity}, ${state}, Brasil`;
   
   try {
-    let coords = await geocodeNominatim(addressQuery);
+    let coords = await geocodeProvider(addressQuery);
     if (coords.success) {
       return {
         success: true,
@@ -193,14 +245,14 @@ export async function geocodeAddress(street, neighborhood = '', city = 'Curitiba
         neighborhood: cleanNeighborhood || coords.neighborhood,
         city: cleanCity,
         state,
-        source: 'Nominatim'
+        source: coords.source || 'Nominatim'
       };
     }
 
     // 2. Fallback tolerante: se falhou e havia bairro, tentar APENAS Rua e Cidade (ignora erros de digitação no bairro)
     if (cleanNeighborhood) {
       addressQuery = `${cleanStreet}, ${cleanCity}, ${state}, Brasil`;
-      coords = await geocodeNominatim(addressQuery);
+      coords = await geocodeProvider(addressQuery);
       if (coords.success) {
         return {
           success: true,
@@ -210,7 +262,7 @@ export async function geocodeAddress(street, neighborhood = '', city = 'Curitiba
           neighborhood: coords.neighborhood || cleanNeighborhood,
           city: cleanCity,
           state,
-          source: 'Nominatim (Sem Bairro)'
+          source: coords.source || 'Nominatim (Sem Bairro)'
         };
       }
     }
