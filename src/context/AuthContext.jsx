@@ -277,6 +277,10 @@ export function AuthProvider({ children }) {
     const { data, error } = await supabase.from('profiles').update(profileData).eq('id', id).select();
     if (error) throw error;
     
+    if (!data || data.length === 0) {
+      throw new Error('Não autorizado: verifique se executou o script SQL de atualização (update_schema_v13.sql) no painel do Supabase.');
+    }
+    
     if (user && id === user.id) {
       setUser(prev => {
         const updated = { ...prev, ...profileData };
