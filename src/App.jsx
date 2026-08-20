@@ -461,6 +461,7 @@ function AppContent({ theme, onThemeToggle }) {
         onClose={() => {
           setIsDetailsOpen(false);
           setSelectedPropertyForDetails(null);
+          setHoveredPropertyId(null);
         }}
         property={selectedPropertyForDetails}
         onContactClick={handleContactClick}

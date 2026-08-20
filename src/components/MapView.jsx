@@ -152,9 +152,9 @@ function MarkerClusterer({ properties, hoveredPropertyId, onPropertyClick, theme
               : 'bg-slate-900 dark:bg-slate-950 text-emerald-400 hover:bg-slate-800');
 
       const customIcon = L.divIcon({
-        className: `custom-pin-container ${isHovered ? 'active-map-pin' : ''}`,
+        className: 'custom-pin-container',
         html: `
-          <div class="flex items-center justify-center w-8 h-8 rounded-full shadow-lg border border-white transition-all duration-300 ${pinColorClass}">
+          <div class="flex items-center justify-center w-8 h-8 rounded-full shadow-lg border border-white transition-all duration-300 ${pinColorClass} ${isHovered ? 'active-map-pin' : ''}">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               ${pinSvg}
             </svg>
