@@ -248,6 +248,24 @@ export async function deletePropertyImageByPath(bucket, path) {
   return true;
 }
 
+export async function deletePropertyImage(id, bucket, path) {
+  assertSupabaseConfigured();
+  
+  const { error: dbError } = await supabase
+    .from('property_images')
+    .delete()
+    .eq('id', id);
+  if (dbError) throw dbError;
+
+  try {
+    await supabase.storage.from(bucket).remove([path]);
+  } catch (storageErr) {
+    console.warn('Erro ao deletar do storage, mas registro removido do banco:', storageErr);
+  }
+  
+  return true;
+}
+
 export async function getConstrutoras() {
   assertSupabaseConfigured();
   const { data, error } = await supabase

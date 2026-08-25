@@ -4,7 +4,7 @@ import L from 'leaflet';
 import { X, Search, Sparkles, AlertCircle, Save, Building2, Award, Check } from 'lucide-react';
 import { geocodeCep, geocodeAddress } from '../services/geocoding';
 import { useAuth } from '../context/AuthContext';
-import { getConstrutoras, addConstrutora } from '../services/propertyService';
+import { getConstrutoras, addConstrutora, getPropertyImages, deletePropertyImage } from '../services/propertyService';
 
 function MapClickHandler({ onLocationSelect }) {
   useMapEvents({
@@ -83,6 +83,7 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
   const [errorMsg, setErrorMsg] = useState('');
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+  const [existingImages, setExistingImages] = useState([]);
 
   // Estados de Averbação / Construtoras
   const [respType, setRespType] = useState('corretor-self'); // 'corretor-self' | 'corretor-other' | 'construtora' | 'manual'
@@ -99,6 +100,28 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
         .catch(err => console.error('Erro ao carregar construtoras:', err));
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen && propertyToEdit && propertyToEdit.id) {
+      getPropertyImages(propertyToEdit.id)
+        .then(data => setExistingImages(data || []))
+        .catch(err => console.error('Erro ao carregar imagens existentes:', err));
+    } else {
+      setExistingImages([]);
+    }
+  }, [propertyToEdit, isOpen]);
+
+  const handleDeleteExistingImage = async (imgId, bucket, path) => {
+    if (window.confirm('Deseja excluir esta imagem permanentemente do empreendimento?')) {
+      try {
+        await deletePropertyImage(imgId, bucket, path);
+        setExistingImages(prev => prev.filter(img => img.id !== imgId));
+      } catch (err) {
+        console.error('Erro ao deletar imagem:', err);
+        alert('Erro ao excluir imagem. Tente novamente.');
+      }
+    }
+  };
 
   const resetToDefault = () => {
     setFormData({
@@ -577,6 +600,28 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
                 className="w-full text-xs border border-slate-200 dark:border-slate-850 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-105 bg-white dark:bg-slate-950/50 focus:outline-none"
               />
             </div>
+
+            {/* Fotos Atuais do Empreendimento (Edição) */}
+            {propertyToEdit && existingImages.length > 0 && (
+              <div className="flex flex-col gap-1.5 p-3.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850/60 rounded-2xl animate-fadeIn">
+                <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Fotos Atuais no Banco ({existingImages.length})</span>
+                <div className="flex gap-2 overflow-x-auto py-1 scrollbar-thin">
+                  {existingImages.map((img) => (
+                    <div key={img.id} className="w-20 h-20 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 relative shrink-0 group">
+                      <img src={img.url} alt="Galeria" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteExistingImage(img.id, img.bucket, img.path)}
+                        className="absolute top-1 right-1 p-1 bg-red-600 hover:bg-red-500 text-white rounded-full transition shadow-md flex items-center justify-center"
+                        title="Excluir Imagem"
+                      >
+                        <X size={10} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Upload de múltiplas imagens */}
             <div className="flex flex-col gap-1">
