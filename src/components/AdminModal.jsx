@@ -72,7 +72,8 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
     quartos_max: '',
     vagas_max: '',
     area_max_m2: '',
-    drive_url: ''
+    drive_url: '',
+    previsao_entrega: ''
   });
 
   const { profiles, user } = useAuth();
@@ -81,6 +82,7 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
   const [cepFeedback, setCepFeedback] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
 
   // Estados de Averbação / Construtoras
   const [respType, setRespType] = useState('corretor-self'); // 'corretor-self' | 'corretor-other' | 'construtora' | 'manual'
@@ -121,12 +123,14 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
       quartos_max: '',
       vagas_max: '',
       area_max_m2: '',
-      drive_url: ''
+      drive_url: '',
+      previsao_entrega: ''
     });
     setCepFeedback('');
     setRespType('corretor-self');
     setSelectedBroker('');
     setSelectedConstrutora('');
+    setSubmitting(false);
   };
 
   // Carrega ou inicializa o formulário (recuperando rascunhos para novos cadastros)
@@ -154,7 +158,8 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
         quartos_max: propertyToEdit.quartos_max ?? '',
         vagas_max: propertyToEdit.vagas_max ?? '',
         area_max_m2: propertyToEdit.area_max_m2 || '',
-        drive_url: propertyToEdit.drive_url || ''
+        drive_url: propertyToEdit.drive_url || '',
+        previsao_entrega: propertyToEdit.previsao_entrega || ''
       });
       setCepFeedback('Coordenadas originais carregadas.');
 
@@ -316,7 +321,7 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
 
@@ -333,16 +338,6 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
       return;
     }
 
-    if (respType === 'corretor-other' && !selectedBroker) {
-      setErrorMsg('Por favor, selecione o corretor responsável.');
-      return;
-    }
-
-    if (respType === 'construtora' && !selectedConstrutora) {
-      setErrorMsg('Por favor, selecione a construtora parceira.');
-      return;
-    }
-
     let computedAverbacao = '';
     if (respType === 'corretor-self') {
       computedAverbacao = `Corretor: ${user?.nome || 'Desconhecido'}`;
@@ -354,12 +349,18 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
       computedAverbacao = formData.averbacao;
     }
 
-    // Pass selectedFiles to parent for upload handling
-    onSave({ ...formData, averbacao: computedAverbacao, images: selectedFiles });
+    setSubmitting(true);
+    try {
+      // Pass selectedFiles to parent for upload handling
+      await onSave({ ...formData, averbacao: computedAverbacao, images: selectedFiles });
 
-    // Limpa o rascunho de novo cadastro
-    if (!propertyToEdit) {
-      localStorage.removeItem('property_draft');
+      // Limpa o rascunho de novo cadastro
+      if (!propertyToEdit) {
+        localStorage.removeItem('property_draft');
+      }
+    } catch (err) {
+      setErrorMsg(err?.message || 'Erro ao salvar o empreendimento. Tente novamente.');
+      setSubmitting(false);
     }
   };
 
@@ -455,7 +456,7 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
                 <select
                   value={formData.status}
                   onChange={(e) => handleInputChange('status', e.target.value)}
-                  className="w-full text-xs border border-slate-200 dark:border-slate-850 rounded-xl px-2 py-2.5 text-slate-800 dark:text-slate-105 bg-white dark:bg-slate-950/50 focus:outline-none"
+                  className="w-full text-xs border border-slate-200 dark:border-slate-850 rounded-xl px-2 py-2.5 text-slate-800 dark:text-slate-105 bg-white dark:bg-slate-955 focus:outline-none"
                 >
                   <option value="Lançamento">Lançamento</option>
                   <option value="Em Obras">Em Obras</option>
@@ -463,6 +464,20 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
                 </select>
               </div>
             </div>
+
+            {(formData.status === 'Lançamento' || formData.status === 'Em Obras') && (
+              <div className="flex flex-col gap-1 animate-fadeIn">
+                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Previsão de Entrega *</label>
+                <input
+                  type="text"
+                  value={formData.previsao_entrega || ''}
+                  onChange={(e) => handleInputChange('previsao_entrega', e.target.value)}
+                  placeholder="Ex: 2º Semestre/2026 ou Dez/2025"
+                  className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-105 bg-white dark:bg-slate-955 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
+                  required
+                />
+              </div>
+            )}
 
             {/* Linha Preço e Área */}
             <div className="grid grid-cols-2 gap-3">
@@ -936,10 +951,22 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-slate-950 dark:text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+              disabled={submitting}
+              className={`px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-slate-950 dark:text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm ${
+                submitting ? 'opacity-60 cursor-not-allowed' : ''
+              }`}
             >
-              <Save size={14} />
-              <span>{propertyToEdit ? 'Salvar Alterações' : 'Cadastrar Empreendimento'}</span>
+              {submitting ? (
+                <>
+                  <span className="w-3.5 h-3.5 border-2 border-slate-950 dark:border-white border-t-transparent rounded-full animate-spin"></span>
+                  <span>Salvando...</span>
+                </>
+              ) : (
+                <>
+                  <Save size={14} />
+                  <span>{propertyToEdit ? 'Salvar Alterações' : 'Cadastrar Empreendimento'}</span>
+                </>
+              )}
             </button>
           </div>
 

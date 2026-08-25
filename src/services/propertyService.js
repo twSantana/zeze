@@ -71,7 +71,8 @@ export async function addProperty(propertyData, user) {
       vagas_max: propertyData.vagas_max ? parseInt(propertyData.vagas_max) : parseInt(propertyData.vagas || 0),
       area_max_m2: propertyData.area_max_m2 ? parseFloat(propertyData.area_max_m2) : parseFloat(propertyData.area_m2),
       faixa: calculateFaixa(propertyData.preco),
-      drive_url: propertyData.drive_url || ''
+      drive_url: propertyData.drive_url || '',
+      previsao_entrega: (propertyData.status === 'Lançamento' || propertyData.status === 'Em Obras') ? (propertyData.previsao_entrega || '') : ''
     }])
     .select();
 
@@ -120,7 +121,8 @@ export async function updateProperty(id, propertyData) {
       vagas_max: propertyData.vagas_max ? parseInt(propertyData.vagas_max) : parseInt(propertyData.vagas || 0),
       area_max_m2: propertyData.area_max_m2 ? parseFloat(propertyData.area_max_m2) : parseFloat(propertyData.area_m2),
       faixa: calculateFaixa(propertyData.preco),
-      drive_url: propertyData.drive_url || ''
+      drive_url: propertyData.drive_url || '',
+      previsao_entrega: (propertyData.status === 'Lançamento' || propertyData.status === 'Em Obras') ? (propertyData.previsao_entrega || '') : ''
     })
     .eq('id', id)
     .select();

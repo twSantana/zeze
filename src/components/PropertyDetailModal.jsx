@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, MapPin, BedDouble, Car, Maximize, 
   ExternalLink, ShieldCheck, FileText, Star, Landmark, Award,
-  ChevronLeft, ChevronRight, FolderOpen, Edit3, Trash2
+  ChevronLeft, ChevronRight, FolderOpen, Edit3, Trash2, Calendar
 } from 'lucide-react';
 import { getPropertyImages } from '../services/propertyService';
 import { useAuth } from '../context/AuthContext';
@@ -248,15 +248,24 @@ export default function PropertyDetailModal({ isOpen, onClose, property, onConta
               )}
             </div>
 
-            {/* Título e Localidade */}
+            {/* Título, Localidade e Previsão de Entrega */}
             <div>
               <h2 className="text-xl font-extrabold text-slate-900 dark:text-white leading-tight">
                 {property.titulo}
               </h2>
               
-              <div className="mt-2 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 font-medium">
-                <MapPin size={13} className="text-slate-450 dark:text-slate-500 shrink-0" />
-                <span>{property.endereco ? `${property.endereco}, ` : ''}{property.bairro} — {property.cidade}</span>
+              <div className="mt-2 flex flex-col gap-1.5">
+                <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  <MapPin size={13} className="text-slate-450 dark:text-slate-500 shrink-0" />
+                  <span>{property.endereco ? `${property.endereco}, ` : ''}{property.bairro} — {property.cidade}</span>
+                </div>
+                
+                {property.previsao_entrega && (property.status === 'Lançamento' || property.status === 'Em Obras') && (
+                  <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-500 dark:bg-amber-950/20 bg-amber-50 border border-amber-100 dark:border-amber-900/40 px-2.5 py-1 rounded-xl w-fit font-bold">
+                    <Calendar size={12} className="shrink-0 text-amber-500" />
+                    <span>Previsão de Entrega: {property.previsao_entrega}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -308,14 +317,16 @@ export default function PropertyDetailModal({ isOpen, onClose, property, onConta
 
             {/* Observações */}
             {property.observacoes && (
-              <div className="p-3 bg-slate-50 dark:bg-slate-950/30 rounded-2xl border border-slate-150 dark:border-slate-850">
-                <div className="flex items-center gap-2 mb-1">
+              <div className="p-3 bg-slate-50 dark:bg-slate-950/30 rounded-2xl border border-slate-150 dark:border-slate-850 flex flex-col max-h-36">
+                <div className="flex items-center gap-2 mb-1.5 shrink-0">
                   <FileText size={14} className="text-slate-450 dark:text-slate-500" />
                   <h4 className="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Observações / Notas Internas</h4>
                 </div>
-                <p className="text-xs text-slate-650 dark:text-slate-350 leading-relaxed italic whitespace-pre-line font-medium">
-                  {property.observacoes}
-                </p>
+                <div className="flex-grow overflow-y-auto pr-1">
+                  <p className="text-xs text-slate-650 dark:text-slate-350 leading-relaxed italic whitespace-pre-line font-medium">
+                    {property.observacoes}
+                  </p>
+                </div>
               </div>
             )}
 

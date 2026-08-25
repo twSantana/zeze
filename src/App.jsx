@@ -309,6 +309,7 @@ function AppContent({ theme, onThemeToggle }) {
     } catch (err) {
       console.error('Erro ao salvar empreendimento:', err);
       alert(`Erro ao salvar empreendimento: ${err?.message || 'Verifique os dados e tente novamente.'}`);
+      throw err;
     }
   };
 
