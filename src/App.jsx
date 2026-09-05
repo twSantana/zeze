@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ToastProvider, useToast } from './components/ui/Toast';
 import MapView from './components/MapView';
 import Sidebar from './components/Sidebar';
 import BottomSheet from './components/BottomSheet';
@@ -259,56 +260,44 @@ function AppContent({ theme, onThemeToggle }) {
   const handleSaveProperty = async (formData) => {
     try {
       if (propertyToEdit) {
-        const updated = await updateProperty(propertyToEdit.id, formData);
-        const updatedWithCoords = { ...updated, lat: formData.lat, lng: formData.lng };
+        let finalFormData = { ...formData };
+
+        // Processa upload de imagens antes de atualizar o imóvel para evitar requisições duplas
+        if (formData.images && formData.images.length > 0) {
+          const uploaded = await uploadPropertyImages(formData.images, propertyToEdit.id);
+          if (uploaded && uploaded.length > 0 && !formData.imagem_url) {
+            finalFormData.imagem_url = uploaded[0].url;
+          }
+        }
+
+        const updated = await updateProperty(propertyToEdit.id, finalFormData);
+        const updatedWithCoords = { ...updated, lat: finalFormData.lat, lng: finalFormData.lng };
         setRawProperties(prev => 
           prev.map(p => p.id === propertyToEdit.id ? updatedWithCoords : p)
         );
         setClickedProperties(prev => 
           prev.map(p => p.id === propertyToEdit.id ? updatedWithCoords : p)
         );
-
-        // Handle uploaded images when editing
-        if (formData.images && formData.images.length > 0) {
-          const uploaded = await uploadPropertyImages(formData.images, propertyToEdit.id);
-          if (uploaded && uploaded.length > 0) {
-            const first = uploaded[0];
-            const updatedWithCover = await updateProperty(propertyToEdit.id, { ...formData, imagem_url: first.url });
-            const updatedWithCoverCoords = { ...updatedWithCover, lat: formData.lat, lng: formData.lng };
-            setRawProperties(prev => prev.map(p => p.id === propertyToEdit.id ? updatedWithCoverCoords : p));
-            setClickedProperties(prev => prev.map(p => p.id === propertyToEdit.id ? updatedWithCoverCoords : p));
-            handlePropertyFocus(updatedWithCoverCoords);
-          } else {
-            handlePropertyFocus(updatedWithCoords);
-          }
-        } else {
-          handlePropertyFocus(updatedWithCoords);
-        }
+        handlePropertyFocus(updatedWithCoords);
       } else {
         const created = await addProperty(formData, user);
-        const createdWithCoords = { ...created, lat: formData.lat, lng: formData.lng };
-        setRawProperties(prev => [createdWithCoords, ...prev]);
-        // If there are images selected, upload them and set cover
+        let createdWithCoords = { ...created, lat: formData.lat, lng: formData.lng };
+        
         if (formData.images && formData.images.length > 0) {
           const uploaded = await uploadPropertyImages(formData.images, created.id);
           if (uploaded && uploaded.length > 0) {
-            const first = uploaded[0];
-            const updatedWithCover = await updateProperty(created.id, { ...formData, imagem_url: first.url });
-            const updatedWithCoverCoords = { ...updatedWithCover, lat: formData.lat, lng: formData.lng };
-            setRawProperties(prev => prev.map(p => p.id === created.id ? updatedWithCoverCoords : p));
-            handlePropertyFocus(updatedWithCoverCoords);
-          } else {
-            handlePropertyFocus(createdWithCoords);
+            const updatedWithCover = await updateProperty(created.id, { imagem_url: uploaded[0].url });
+            createdWithCoords = { ...updatedWithCover, lat: formData.lat, lng: formData.lng };
           }
-        } else {
-          handlePropertyFocus(createdWithCoords);
         }
+
+        setRawProperties(prev => [createdWithCoords, ...prev]);
+        handlePropertyFocus(createdWithCoords);
       }
       setIsAdminOpen(false);
       setPropertyToEdit(null);
     } catch (err) {
       console.error('Erro ao salvar empreendimento:', err);
-      alert(`Erro ao salvar empreendimento: ${err?.message || 'Verifique os dados e tente novamente.'}`);
       throw err;
     }
   };
@@ -656,7 +645,9 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <AppContent theme={theme} onThemeToggle={handleThemeToggle} />
+      <ToastProvider>
+        <AppContent theme={theme} onThemeToggle={handleThemeToggle} />
+      </ToastProvider>
     </AuthProvider>
   );
 }

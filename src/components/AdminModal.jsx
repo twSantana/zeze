@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { X, Search, Sparkles, AlertCircle, Save, Building2, Award, Check } from 'lucide-react';
+import { X, Search, Sparkles, AlertCircle, Save, Building2, Trash2, Calendar, Upload, Plus, Star, MapPin } from 'lucide-react';
 import { geocodeCep, geocodeAddress } from '../services/geocoding';
 import { useAuth } from '../context/AuthContext';
 import { getConstrutoras, addConstrutora, getPropertyImages, deletePropertyImage } from '../services/propertyService';
+import { Button } from './ui/Button';
+import { Input } from './ui/Input';
+import { Select } from './ui/Select';
+import { Badge } from './ui/Badge';
+import { useToast } from './ui/Toast';
 
 function MapClickHandler({ onLocationSelect }) {
   useMapEvents({
@@ -50,13 +55,16 @@ function MapThemeSync({ theme }) {
 }
 
 export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, theme }) {
+  const toast = useToast();
+  const { profiles, user } = useAuth();
+
   const [formData, setFormData] = useState({
     titulo: '',
     tipo: 'Apartamento',
     status: 'Lançamento',
     preco: '',
-    quartos: 0,
-    vagas: 0,
+    quartos: 2,
+    vagas: 1,
     area_m2: '',
     imagem_url: '',
     cep: '',
@@ -76,8 +84,6 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
     previsao_entrega: ''
   });
 
-  const { profiles, user } = useAuth();
-
   const [loadingCep, setLoadingCep] = useState(false);
   const [cepFeedback, setCepFeedback] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -86,7 +92,7 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
   const [existingImages, setExistingImages] = useState([]);
 
   // Estados de Averbação / Construtoras
-  const [respType, setRespType] = useState('corretor-self'); // 'corretor-self' | 'corretor-other' | 'construtora' | 'manual'
+  const [respType, setRespType] = useState('corretor-self');
   const [selectedBroker, setSelectedBroker] = useState('');
   const [selectedConstrutora, setSelectedConstrutora] = useState('');
   const [construtoras, setConstrutoras] = useState([]);
@@ -112,14 +118,13 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
   }, [propertyToEdit, isOpen]);
 
   const handleDeleteExistingImage = async (imgId, bucket, path) => {
-    if (window.confirm('Deseja excluir esta imagem permanentemente do empreendimento?')) {
-      try {
-        await deletePropertyImage(imgId, bucket, path);
-        setExistingImages(prev => prev.filter(img => img.id !== imgId));
-      } catch (err) {
-        console.error('Erro ao deletar imagem:', err);
-        alert('Erro ao excluir imagem. Tente novamente.');
-      }
+    try {
+      await deletePropertyImage(imgId, bucket, path);
+      setExistingImages(prev => prev.filter(img => img.id !== imgId));
+      toast.success('Foto excluída com sucesso do empreendimento!');
+    } catch (err) {
+      console.error('Erro ao deletar imagem:', err);
+      toast.error('Erro ao excluir a imagem.');
     }
   };
 
@@ -153,10 +158,10 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
     setRespType('corretor-self');
     setSelectedBroker('');
     setSelectedConstrutora('');
+    setSelectedFiles([]);
     setSubmitting(false);
   };
 
-  // Carrega ou inicializa o formulário (recuperando rascunhos para novos cadastros)
   useEffect(() => {
     if (propertyToEdit) {
       setFormData({
@@ -178,69 +183,18 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
         prioridade: propertyToEdit.prioridade || false,
         observacoes: propertyToEdit.observacoes || '',
         averbacao: propertyToEdit.averbacao || '',
-        quartos_max: propertyToEdit.quartos_max ?? '',
-        vagas_max: propertyToEdit.vagas_max ?? '',
+        quartos_max: propertyToEdit.quartos_max || '',
+        vagas_max: propertyToEdit.vagas_max || '',
         area_max_m2: propertyToEdit.area_max_m2 || '',
         drive_url: propertyToEdit.drive_url || '',
         previsao_entrega: propertyToEdit.previsao_entrega || ''
       });
-      setCepFeedback('Coordenadas originais carregadas.');
-
-      const rawAverb = propertyToEdit.averbacao || '';
-      if (rawAverb.startsWith('Corretor: ')) {
-        const brokerVal = rawAverb.replace('Corretor: ', '');
-        if (user && brokerVal === user.nome) {
-          setRespType('corretor-self');
-        } else {
-          setRespType('corretor-other');
-          setSelectedBroker(brokerVal);
-        }
-      } else if (rawAverb.startsWith('Construtora: ')) {
-        setRespType('construtora');
-        setSelectedConstrutora(rawAverb.replace('Construtora: ', ''));
-      } else if (rawAverb) {
-        setRespType('manual');
-      } else {
-        setRespType('corretor-self');
-      }
+      setSelectedFiles([]);
     } else {
-      // Tenta recuperar rascunho anterior de novo imóvel do localStorage
-      const saved = localStorage.getItem('property_draft');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (parsed && parsed.formData) {
-            setFormData(parsed.formData);
-            setRespType(parsed.respType || 'corretor-self');
-            setSelectedBroker(parsed.selectedBroker || '');
-            setSelectedConstrutora(parsed.selectedConstrutora || '');
-            setCepFeedback('Rascunho recuperado automaticamente.');
-          } else {
-            resetToDefault();
-          }
-        } catch (e) {
-          console.error('Erro ao ler rascunho do localStorage:', e);
-          resetToDefault();
-        }
-      } else {
-        resetToDefault();
-      }
+      resetToDefault();
     }
     setErrorMsg('');
-  }, [propertyToEdit, isOpen, user]);
-
-  // Salva o rascunho em localStorage quando o usuário altera os campos de um novo imóvel
-  useEffect(() => {
-    if (isOpen && !propertyToEdit) {
-      const draft = {
-        formData,
-        respType,
-        selectedBroker,
-        selectedConstrutora
-      };
-      localStorage.setItem('property_draft', JSON.stringify(draft));
-    }
-  }, [formData, respType, selectedBroker, selectedConstrutora, isOpen, propertyToEdit]);
+  }, [propertyToEdit, isOpen]);
 
   if (!isOpen) return null;
 
@@ -270,7 +224,6 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
         setCepFeedback(`✓ Encontrado via ${result.source}! Coordenadas carregadas.`);
       } else {
         setCepFeedback('⚠️ CEP encontrado, mas ajuste as coordenadas no mapa.');
-        setErrorMsg(result.error || 'CEP não geolocalizado.');
       }
     } catch (err) {
       setCepFeedback('Erro ao conectar com serviço de CEP.');
@@ -291,7 +244,6 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
           ...prev,
           lat: result.lat,
           lng: result.lng,
-          // Autopreenchimento inteligente do bairro e da cidade se obtidos no geocoding
           bairro: result.neighborhood || prev.bairro,
           cidade: result.city || prev.cidade
         }));
@@ -301,7 +253,7 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
       }
     } catch (err) {
       setCepFeedback('Erro ao conectar com geocodificador.');
-    } finally {
+    } fontally: {
       setLoadingCep(false);
     }
   };
@@ -338,9 +290,10 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
         setSelectedConstrutora(added.nome);
         setNewConstrutoraName('');
         setShowNewConstrutoraInput(false);
+        toast.success(`Construtora "${added.nome}" adicionada!`);
       }
     } catch (err) {
-      setErrorMsg(err.message || 'Erro ao cadastrar construtora.');
+      toast.error(err.message || 'Erro ao cadastrar construtora.');
     }
   };
 
@@ -354,10 +307,14 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
     if (!formData.area_m2) missingFields.push('Área');
     if (!formData.bairro) missingFields.push('Bairro');
     if (!formData.endereco) missingFields.push('Endereço');
-    if (!formData.imagem_url && selectedFiles.length === 0) missingFields.push('Imagem de capa (URL ou upload)');
+    if (!formData.imagem_url && selectedFiles.length === 0 && existingImages.length === 0) {
+      missingFields.push('Foto de Capa ou Upload de Imagens');
+    }
 
     if (missingFields.length > 0) {
-      setErrorMsg(`Preencha os campos obrigatórios: ${missingFields.join(', ')}.`);
+      const msg = `Preencha os campos obrigatórios: ${missingFields.join(', ')}.`;
+      setErrorMsg(msg);
+      toast.error(msg);
       return;
     }
 
@@ -374,15 +331,13 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
 
     setSubmitting(true);
     try {
-      // Pass selectedFiles to parent for upload handling
       await onSave({ ...formData, averbacao: computedAverbacao, images: selectedFiles });
-
-      // Limpa o rascunho de novo cadastro
-      if (!propertyToEdit) {
-        localStorage.removeItem('property_draft');
-      }
+      toast.success(propertyToEdit ? 'Empreendimento atualizado com sucesso!' : 'Empreendimento cadastrado com sucesso!');
+      onClose();
     } catch (err) {
       setErrorMsg(err?.message || 'Erro ao salvar o empreendimento. Tente novamente.');
+      toast.error(err?.message || 'Erro ao salvar o empreendimento.');
+    } finally {
       setSubmitting(false);
     }
   };
@@ -390,7 +345,6 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
   const handleFilesSelected = (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
-    // Limit to 10 images to avoid abuse
     const combined = [...selectedFiles, ...files].slice(0, 10);
     setSelectedFiles(combined);
   };
@@ -400,222 +354,193 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
   };
 
   return (
-    <div className="fixed inset-0 z-[99999] bg-slate-950/95 backdrop-blur-lg flex items-center justify-center p-4 overflow-y-auto animate-fadeIn pointer-events-auto">
-      <div className="bg-white dark:bg-slate-900 rounded-none md:rounded-3xl w-full max-w-full md:max-w-5xl h-full md:h-auto max-h-[calc(100vh-2rem)] shadow-2xl border border-slate-100 dark:border-slate-800/80 overflow-hidden flex flex-col my-0 md:my-8 transition-colors duration-300">
+    <div className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 md:p-6 overflow-y-auto animate-fadeIn">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-5xl max-h-[90vh] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col relative transition-colors duration-300">
         
         {/* Header */}
         <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-900 text-white shrink-0">
-          <div>
-            <h3 className="font-sans font-bold text-sm">
-              {propertyToEdit ? 'Editar Empreendimento' : 'Cadastrar Novo Empreendimento'}
-            </h3>
-            <p className="text-[10px] text-slate-400 font-medium">Ficha técnica e geolocalização da RMC</p>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <Building2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-base">
+                {propertyToEdit ? 'Editar Empreendimento' : 'Cadastrar Novo Empreendimento'}
+              </h3>
+              <p className="text-xs text-slate-400">Preencha as informações técnicas e localização geográfica</p>
+            </div>
           </div>
           <button 
             onClick={onClose}
-            className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition"
+            className="p-2 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
           >
-            <X size={18} />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Formulário */}
-        <form onSubmit={handleSubmit} className="flex-grow overflow-y-auto p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-h-[65vh] md:max-h-[70vh] text-slate-800 dark:text-slate-200">
+        {/* Formulário Grid de 2 Colunas */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6 text-slate-800 dark:text-slate-200">
           
-          {/* Ficha Técnica */}
+          {/* Coluna 1: Ficha Técnica */}
           <div className="space-y-4">
             <h4 className="text-xs font-extrabold text-slate-800 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800 pb-2 uppercase tracking-wider">
-              1. Ficha Técnica
+              1. Ficha Técnica & Informações
             </h4>
 
             {errorMsg && (
-              <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 text-red-600 dark:text-red-400 text-xs font-semibold flex items-center gap-2">
-                <AlertCircle size={16} className="shrink-0" />
+              <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{errorMsg}</span>
               </div>
             )}
 
-            <div className="flex items-center gap-2 py-2.5 bg-amber-50 dark:bg-amber-955/20 px-3.5 rounded-xl border border-amber-200 dark:border-amber-900/40">
+            <div className="flex items-center gap-2 py-2.5 bg-amber-500/10 px-3.5 rounded-xl border border-amber-500/20">
               <input
                 type="checkbox"
                 id="prioridade"
                 checked={formData.prioridade}
                 onChange={(e) => handleInputChange('prioridade', e.target.checked)}
-                className="accent-amber-500 w-4 h-4 cursor-pointer"
+                className="accent-amber-500 w-4 h-4 cursor-pointer rounded"
               />
-              <label htmlFor="prioridade" className="text-xs font-black text-amber-700 dark:text-amber-400 cursor-pointer uppercase select-none flex items-center gap-1">
-                ⭐ Destaque / Imóvel Prioritário
+              <label htmlFor="prioridade" className="text-xs font-bold text-amber-700 dark:text-amber-300 cursor-pointer uppercase select-none flex items-center gap-1.5">
+                <Star className="w-4 h-4 fill-amber-500 stroke-none" />
+                Destaque / Imóvel Prioritário
               </label>
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Título *</label>
-              <input
-                type="text"
-                value={formData.titulo}
-                onChange={(e) => handleInputChange('titulo', e.target.value)}
-                placeholder="Ex: Vitra Batel Residence"
-                className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-950/50 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
-                required
-              />
-            </div>
+            <Input
+              label="Nome do Empreendimento / Título *"
+              placeholder="Ex: Residencial Vitra Batel"
+              value={formData.titulo}
+              onChange={(e) => handleInputChange('titulo', e.target.value)}
+              required
+            />
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Tipo *</label>
-                <select
-                  value={formData.tipo}
-                  onChange={(e) => handleInputChange('tipo', e.target.value)}
-                  className="w-full text-xs border border-slate-200 dark:border-slate-850 rounded-xl px-2 py-2.5 text-slate-800 dark:text-slate-105 bg-white dark:bg-slate-950/50 focus:outline-none"
-                >
-                  <option value="Apartamento">Apartamento</option>
-                  <option value="Sobrado">Sobrado</option>
-                  <option value="Terreno">Terreno</option>
-                </select>
-              </div>
+              <Select
+                label="Tipo de Imóvel *"
+                value={formData.tipo}
+                onChange={(e) => handleInputChange('tipo', e.target.value)}
+              >
+                <option value="Apartamento">Apartamento</option>
+                <option value="Sobrado">Sobrado</option>
+                <option value="Casa">Casa</option>
+                <option value="Terreno">Terreno</option>
+              </Select>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Status *</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => handleInputChange('status', e.target.value)}
-                  className="w-full text-xs border border-slate-200 dark:border-slate-850 rounded-xl px-2 py-2.5 text-slate-800 dark:text-slate-105 bg-white dark:bg-slate-955 focus:outline-none"
-                >
-                  <option value="Lançamento">Lançamento</option>
-                  <option value="Em Obras">Em Obras</option>
-                  <option value="Pronto">Pronto</option>
-                </select>
-              </div>
+              <Select
+                label="Status da Obra *"
+                value={formData.status}
+                onChange={(e) => handleInputChange('status', e.target.value)}
+              >
+                <option value="Lançamento">Lançamento</option>
+                <option value="Em Obras">Em Obras</option>
+                <option value="Pronto">Pronto</option>
+              </Select>
             </div>
 
             {(formData.status === 'Lançamento' || formData.status === 'Em Obras') && (
-              <div className="flex flex-col gap-1 animate-fadeIn">
-                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Previsão de Entrega *</label>
-                <input
-                  type="text"
-                  value={formData.previsao_entrega || ''}
-                  onChange={(e) => handleInputChange('previsao_entrega', e.target.value)}
-                  placeholder="Ex: 2º Semestre/2026 ou Dez/2025"
-                  className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-105 bg-white dark:bg-slate-955 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
-                  required
-                />
-              </div>
+              <Input
+                label="Previsão de Entrega *"
+                placeholder="Ex: 2º Semestre/2026 ou Dez/2025"
+                value={formData.previsao_entrega || ''}
+                onChange={(e) => handleInputChange('previsao_entrega', e.target.value)}
+                icon={Calendar}
+                required
+              />
             )}
 
-            {/* Linha Preço e Área */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Preço Inicial (R$) *</label>
-                <input
-                  type="number"
-                  value={formData.preco}
-                  onChange={(e) => handleInputChange('preco', e.target.value)}
-                  placeholder="Ex: 450000"
-                  className="w-full text-xs border border-slate-200 dark:border-slate-850 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-105 bg-white dark:bg-slate-950/50 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
-                  required
-                />
-              </div>
+              <Input
+                label="Preço Inicial (R$) *"
+                type="number"
+                placeholder="Ex: 450000"
+                value={formData.preco}
+                onChange={(e) => handleInputChange('preco', e.target.value)}
+                required
+              />
 
               <div className="grid grid-cols-2 gap-2">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Área Mín (m²) *</label>
-                  <input
-                    type="number"
-                    value={formData.area_m2}
-                    onChange={(e) => handleInputChange('area_m2', e.target.value)}
-                    placeholder="Min"
-                    className="w-full text-xs border border-slate-200 dark:border-slate-850 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-105 bg-white dark:bg-slate-955 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
-                    required
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Área Máx (m²)</label>
-                  <input
-                    type="number"
-                    value={formData.area_max_m2}
-                    onChange={(e) => handleInputChange('area_max_m2', e.target.value)}
-                    placeholder="Máx (Op.)"
-                    className="w-full text-xs border border-slate-200 dark:border-slate-850 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-105 bg-white dark:bg-slate-955 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
-                  />
-                </div>
+                <Input
+                  label="Área Mín (m²) *"
+                  type="number"
+                  placeholder="Min"
+                  value={formData.area_m2}
+                  onChange={(e) => handleInputChange('area_m2', e.target.value)}
+                  required
+                />
+                <Input
+                  label="Área Máx (m²)"
+                  type="number"
+                  placeholder="Máx (Op.)"
+                  value={formData.area_max_m2}
+                  onChange={(e) => handleInputChange('area_max_m2', e.target.value)}
+                />
               </div>
             </div>
 
             {/* Linha Quartos e Vagas */}
             <div className="grid grid-cols-2 gap-3">
               <div className="grid grid-cols-2 gap-2">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Quartos Mín</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.quartos}
-                    onChange={(e) => handleInputChange('quartos', e.target.value)}
-                    className="w-full text-xs border border-slate-200 dark:border-slate-855 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-105 bg-white dark:bg-slate-955 focus:outline-none"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Quartos Máx</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.quartos_max}
-                    onChange={(e) => handleInputChange('quartos_max', e.target.value)}
-                    className="w-full text-xs border border-slate-200 dark:border-slate-855 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-105 bg-white dark:bg-slate-955 focus:outline-none"
-                  />
-                </div>
+                <Input
+                  label="Quartos Mín"
+                  type="number"
+                  min="0"
+                  value={formData.quartos}
+                  onChange={(e) => handleInputChange('quartos', e.target.value)}
+                />
+                <Input
+                  label="Quartos Máx"
+                  type="number"
+                  min="0"
+                  value={formData.quartos_max}
+                  onChange={(e) => handleInputChange('quartos_max', e.target.value)}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Vagas Mín</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.vagas}
-                    onChange={(e) => handleInputChange('vagas', e.target.value)}
-                    className="w-full text-xs border border-slate-200 dark:border-slate-855 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-105 bg-white dark:bg-slate-955 focus:outline-none"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Vagas Máx</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.vagas_max}
-                    onChange={(e) => handleInputChange('vagas_max', e.target.value)}
-                    className="w-full text-xs border border-slate-200 dark:border-slate-855 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-105 bg-white dark:bg-slate-955 focus:outline-none"
-                  />
-                </div>
+                <Input
+                  label="Vagas Mín"
+                  type="number"
+                  min="0"
+                  value={formData.vagas}
+                  onChange={(e) => handleInputChange('vagas', e.target.value)}
+                />
+                <Input
+                  label="Vagas Máx"
+                  type="number"
+                  min="0"
+                  value={formData.vagas_max}
+                  onChange={(e) => handleInputChange('vagas_max', e.target.value)}
+                />
               </div>
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">URL Imagem Capa (Opcional se houver upload)</label>
-              <input
-                type="url"
-                value={formData.imagem_url}
-                onChange={(e) => handleInputChange('imagem_url', e.target.value)}
-                placeholder="https://exemplo.com/foto.jpg"
-                className="w-full text-xs border border-slate-200 dark:border-slate-850 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-105 bg-white dark:bg-slate-950/50 focus:outline-none"
-              />
-            </div>
+            <Input
+              label="URL da Imagem de Capa (Opcional)"
+              type="url"
+              placeholder="https://exemplo.com/foto.jpg"
+              value={formData.imagem_url}
+              onChange={(e) => handleInputChange('imagem_url', e.target.value)}
+            />
 
-            {/* Fotos Atuais do Empreendimento (Edição) */}
+            {/* Fotos Atuais no Banco (Visualização & Deleção) */}
             {propertyToEdit && existingImages.length > 0 && (
-              <div className="flex flex-col gap-1.5 p-3.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850/60 rounded-2xl animate-fadeIn">
-                <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Fotos Atuais no Banco ({existingImages.length})</span>
-                <div className="flex gap-2 overflow-x-auto py-1 scrollbar-thin">
+              <div className="flex flex-col gap-2 p-3.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800 rounded-2xl">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+                  Galeria do Empreendimento ({existingImages.length} fotos)
+                </span>
+                <div className="flex gap-2.5 overflow-x-auto py-1 scrollbar-thin">
                   {existingImages.map((img) => (
-                    <div key={img.id} className="w-20 h-20 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 relative shrink-0 group">
+                    <div key={img.id} className="w-20 h-20 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 relative shrink-0 group">
                       <img src={img.url} alt="Galeria" className="w-full h-full object-cover" />
                       <button
                         type="button"
                         onClick={() => handleDeleteExistingImage(img.id, img.bucket, img.path)}
-                        className="absolute top-1 right-1 p-1 bg-red-600 hover:bg-red-500 text-white rounded-full transition shadow-md flex items-center justify-center"
+                        className="absolute top-1 right-1 p-1 bg-rose-600 hover:bg-rose-500 text-white rounded-full transition shadow-md flex items-center justify-center"
                         title="Excluir Imagem"
                       >
-                        <X size={10} />
+                        <X className="w-3 h-3" />
                       </button>
                     </div>
                   ))}
@@ -623,278 +548,117 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
               </div>
             )}
 
-            {/* Upload de múltiplas imagens */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Fotos do Empreendimento (upload)</label>
+            {/* Upload de Novas Imagens */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                Upload de Novas Fotos
+              </label>
               <input
                 type="file"
                 accept="image/*"
                 multiple
                 onChange={handleFilesSelected}
-                className="text-xs"
+                className="text-xs text-slate-500 dark:text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-100 dark:file:bg-slate-800 file:text-slate-700 dark:file:text-slate-200 hover:file:bg-slate-200 transition-colors"
               />
 
               {selectedFiles.length > 0 && (
-                <div className="mt-2 flex gap-2 overflow-x-auto">
+                <div className="mt-2 flex gap-2 overflow-x-auto py-1">
                   {selectedFiles.map((f, idx) => (
-                    <div key={idx} className="w-24 h-24 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 relative">
+                    <div key={idx} className="w-20 h-20 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 relative shrink-0">
                       <img src={URL.createObjectURL(f)} alt={f.name} className="w-full h-full object-cover" />
-                      <button type="button" onClick={() => removeSelected(idx)} className="absolute top-1 right-1 p-1 bg-white/80 rounded-full text-red-600">✕</button>
+                      <button type="button" onClick={() => removeSelected(idx)} className="absolute top-1 right-1 p-1 bg-slate-900/80 text-white rounded-full text-xs">
+                        <X className="w-3 h-3" />
+                      </button>
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Novo Campo: Link para o Conteúdo */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Link para o Conteúdo (YouTube, Tour Virtual, Página)</label>
-              <input
-                type="url"
-                value={formData.conteudo_url}
-                onChange={(e) => handleInputChange('conteudo_url', e.target.value)}
-                placeholder="https://exemplo.com/tour-virtual-vitra"
-                className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-950/50 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
-              />
-            </div>
+            <Input
+              label="Link de Conteúdo Externo (Tour Virtual, Vídeo)"
+              type="url"
+              placeholder="https://exemplo.com/tour"
+              value={formData.conteudo_url}
+              onChange={(e) => handleInputChange('conteudo_url', e.target.value)}
+            />
 
-            {/* Novo Campo: Link do Google Drive */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Link do Google Drive (Tabelas, Anexos, PDFs)</label>
-              <input
-                type="url"
-                value={formData.drive_url}
-                onChange={(e) => handleInputChange('drive_url', e.target.value)}
-                placeholder="https://drive.google.com/drive/folders/..."
-                className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-950/50 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
-              />
-            </div>
+            <Input
+              label="Link do Google Drive (Pastas/PDFs)"
+              type="url"
+              placeholder="https://drive.google.com/..."
+              value={formData.drive_url}
+              onChange={(e) => handleInputChange('drive_url', e.target.value)}
+            />
 
-            {/* Novo Campo: Averbação / Responsável */}
-            <div className="flex flex-col gap-2 p-3.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850/60 rounded-2xl">
-              <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Responsável pela Averbação / Captação</label>
-              
-              {/* Chips de seleção de tipo */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                {[
-                  { id: 'corretor-self', label: 'Eu mesmo' },
-                  { id: 'corretor-other', label: 'Outro Corretor' },
-                  { id: 'construtora', label: 'Construtora' },
-                  { id: 'manual', label: 'Notas / Manual' }
-                ].map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => {
-                      setRespType(opt.id);
-                      setErrorMsg('');
-                    }}
-                    className={`py-1.5 px-2 rounded-xl text-[10px] font-extrabold border transition text-center ${
-                      respType === opt.id
-                        ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-sm'
-                        : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Sub-inputs condicionais */}
-              {respType === 'corretor-self' && user && (
-                <div className="flex items-center gap-2 mt-1 text-xs text-slate-600 dark:text-slate-450 font-semibold bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/80 p-2.5 rounded-xl">
-                  <Award size={14} className="text-emerald-500" />
-                  <span>Cadastrado sob sua responsabilidade: <strong className="text-slate-850 dark:text-slate-200">{user.nome}</strong> ({user.role})</span>
-                </div>
-              )}
-
-              {respType === 'corretor-other' && (
-                <div className="mt-1">
-                  <select
-                    value={selectedBroker}
-                    onChange={(e) => {
-                      setSelectedBroker(e.target.value);
-                      setErrorMsg('');
-                    }}
-                    className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-950/50 focus:outline-none"
-                  >
-                    <option value="">-- Selecione o Consultor --</option>
-                    {profiles && profiles
-                      .filter(p => p.ativo)
-                      .map(p => (
-                        <option key={p.id} value={p.nome}>
-                          {p.nome} ({p.role})
-                        </option>
-                      ))
-                    }
-                  </select>
-                </div>
-              )}
-
-              {respType === 'construtora' && (
-                <div className="flex flex-col gap-2 mt-1">
-                  <div className="flex gap-2">
-                    <select
-                      value={selectedConstrutora}
-                      onChange={(e) => {
-                        setSelectedConstrutora(e.target.value);
-                        setErrorMsg('');
-                      }}
-                      className="flex-grow text-xs border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-950/50 focus:outline-none"
-                    >
-                      <option value="">-- Selecione a Construtora --</option>
-                      {construtoras.map(c => (
-                        <option key={c.id} value={c.nome}>
-                          {c.nome}
-                        </option>
-                      ))}
-                    </select>
-
-                    <button
-                      type="button"
-                      onClick={() => setShowNewConstrutoraInput(!showNewConstrutoraInput)}
-                      className="py-2.5 px-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-750 dark:text-slate-300 text-xs font-bold rounded-xl flex items-center gap-1 border border-slate-200/40 dark:border-slate-800/80 transition shadow-sm"
-                      title="Cadastrar Nova Construtora"
-                    >
-                      <Building2 size={13} />
-                      <span>Cadastrar</span>
-                    </button>
-                  </div>
-
-                  {showNewConstrutoraInput && (
-                    <div className="flex gap-2 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl animate-fadeIn">
-                      <input
-                        type="text"
-                        value={newConstrutoraName}
-                        onChange={(e) => setNewConstrutoraName(e.target.value)}
-                        placeholder="Nome da construtora"
-                        className="flex-grow text-xs px-2.5 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleAddNewConstrutora();
-                          }
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAddNewConstrutora}
-                        className="p-2 bg-emerald-500 text-slate-950 rounded-lg hover:bg-emerald-400 transition"
-                        title="Confirmar"
-                      >
-                        <Check size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setNewConstrutoraName('');
-                          setShowNewConstrutoraInput(false);
-                        }}
-                        className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition"
-                        title="Cancelar"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {respType === 'manual' && (
-                <div className="mt-1">
-                  <input
-                    type="text"
-                    value={formData.averbacao}
-                    onChange={(e) => handleInputChange('averbacao', e.target.value)}
-                    placeholder="Ex: Averbado, sob matrícula 12345..."
-                    className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-950/50 focus:outline-none"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Novo Campo: Observações */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Observações Internas (Exclusivo Corretores)</label>
+            {/* Observações Internas */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                Observações Internas (Visível para equipe)
+              </label>
               <textarea
                 value={formData.observacoes}
                 onChange={(e) => handleInputChange('observacoes', e.target.value)}
-                placeholder="Detalhes adicionais, pendências, observações internas..."
+                placeholder="Detalhes internos, condições especiais..."
                 rows="3"
-                className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-950/50 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3.5 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
               />
             </div>
-
           </div>
 
-          {/* Geolocalização */}
-          <div className="flex flex-col h-full space-y-4">
+          {/* Coluna 2: Geolocalização e Mapa */}
+          <div className="flex flex-col space-y-4">
             <h4 className="text-xs font-extrabold text-slate-800 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800 pb-2 uppercase tracking-wider">
-              2. Endereço e Coordenadas
+              2. Endereço e Coordenadas no Mapa
             </h4>
 
-            {/* CEP */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">CEP</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={formData.cep}
-                  onChange={handleCepChange}
-                  placeholder="80000-000"
-                  maxLength="9"
-                  className="w-full text-xs border border-slate-200 dark:border-slate-850 rounded-xl pl-3 pr-10 py-2.5 text-slate-800 dark:text-slate-105 bg-white dark:bg-slate-950/50 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleCepSearch()}
-                  disabled={loadingCep}
-                  className="absolute right-2 top-2 p-1 rounded-lg text-slate-400 hover:text-slate-855 hover:bg-slate-100 dark:hover:bg-slate-900 transition"
-                >
-                  <Search size={14} />
-                </button>
-              </div>
+            {/* CEP com Busca Automática */}
+            <div className="relative">
+              <Input
+                label="CEP *"
+                placeholder="80000-000"
+                maxLength="9"
+                value={formData.cep}
+                onChange={handleCepChange}
+                icon={MapPin}
+              />
+              <button
+                type="button"
+                onClick={() => handleCepSearch()}
+                disabled={loadingCep}
+                className="absolute right-2 top-8 p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors"
+              >
+                <Search className="w-4 h-4" />
+              </button>
             </div>
 
             {cepFeedback && (
-              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-450 bg-emerald-50 dark:bg-emerald-950/20 px-3 py-2 rounded-xl border border-emerald-100 dark:border-emerald-900/50 flex items-center gap-1.5 animate-fadeIn">
-                <Sparkles size={12} className="text-emerald-500 shrink-0" />
+              <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3 py-2 rounded-xl border border-emerald-500/20 flex items-center gap-1.5 animate-fadeIn">
+                <Sparkles className="w-4 h-4 text-emerald-500 shrink-0" />
                 <span>{cepFeedback}</span>
               </span>
             )}
 
             {/* Endereço / Bairro */}
             <div className="grid grid-cols-3 gap-3">
-              <div className="col-span-2 flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Logradouro / Endereço</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={formData.endereco}
-                    onChange={(e) => handleInputChange('endereco', e.target.value)}
-                    onBlur={handleAddressSearch}
-                    className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl pl-3 pr-10 py-2.5 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-950/50 focus:outline-none"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddressSearch}
-                    className="absolute right-2 top-2.5 p-1 rounded-lg text-slate-400 hover:text-slate-705 hover:bg-slate-100 dark:hover:bg-slate-900 transition"
-                    title="Buscar Coordenadas pelo Endereço"
-                  >
-                    <Search size={14} />
-                  </button>
-                </div>
+              <div className="col-span-2">
+                <Input
+                  label="Logradouro / Endereço *"
+                  placeholder="Rua / Av..."
+                  value={formData.endereco}
+                  onChange={(e) => handleInputChange('endereco', e.target.value)}
+                  onBlur={handleAddressSearch}
+                  required
+                />
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Bairro *</label>
-                <input
-                  type="text"
+              <div>
+                <Input
+                  label="Bairro *"
+                  placeholder="Ex: Batel"
                   value={formData.bairro}
                   onChange={(e) => handleInputChange('bairro', e.target.value)}
                   onBlur={handleAddressSearch}
-                  className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 bg-white dark:bg-slate-955 text-slate-800 dark:text-slate-100"
                   required
                 />
               </div>
@@ -902,45 +666,35 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
 
             {/* Cidade, Lat e Lng */}
             <div className="grid grid-cols-3 gap-3">
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Cidade *</label>
-                <input
-                  type="text"
-                  value={formData.cidade}
-                  onChange={(e) => handleInputChange('cidade', e.target.value)}
-                  className="w-full text-xs border border-slate-200 dark:border-slate-855 rounded-xl px-3 py-2 bg-white dark:bg-slate-955 text-slate-855 dark:text-slate-100"
-                  required
-                />
-              </div>
+              <Input
+                label="Cidade *"
+                value={formData.cidade}
+                onChange={(e) => handleInputChange('cidade', e.target.value)}
+                required
+              />
 
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Latitude</label>
-                <input
-                  type="number"
-                  value={formData.lat}
-                  className="w-full text-xs border border-slate-200 dark:border-slate-855 rounded-xl px-3 py-2 bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500"
-                  readOnly
-                />
-              </div>
+              <Input
+                label="Latitude"
+                value={formData.lat}
+                readOnly
+                className="bg-slate-100 dark:bg-slate-800 text-slate-500"
+              />
 
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Longitude</label>
-                <input
-                  type="number"
-                  value={formData.lng}
-                  className="w-full text-xs border border-slate-200 dark:border-slate-855 rounded-xl px-3 py-2 bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500"
-                  readOnly
-                />
-              </div>
+              <Input
+                label="Longitude"
+                value={formData.lng}
+                readOnly
+                className="bg-slate-100 dark:bg-slate-800 text-slate-500"
+              />
             </div>
 
-            {/* Mini Mapa de Ajuste Fino */}
-            <div className="flex-grow flex flex-col gap-1 min-h-[160px]">
-              <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">
-                Ajuste Fino no Mapa (Clique para selecionar)
+            {/* Mini Mapa Interativo */}
+            <div className="flex-1 flex flex-col gap-1.5 min-h-[220px]">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                Ajuste Fino de Localização (Clique para reposicionar o pino)
               </label>
 
-              <div className="h-44 w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 relative">
+              <div className="h-52 w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 relative shadow-inner">
                 <MapContainer
                   center={[formData.lat, formData.lng]}
                   zoom={14}
@@ -971,48 +725,42 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
 
           </div>
 
-          {/* Footer de Controles */}
-          <div className="col-span-1 md:col-span-2 border-t border-slate-100 dark:border-slate-800 pt-4 flex gap-3 justify-end shrink-0">
-            {!propertyToEdit && localStorage.getItem('property_draft') && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (window.confirm('Deseja realmente limpar todos os campos digitados?')) {
-                    localStorage.removeItem('property_draft');
+          {/* Footer de Ações */}
+          <div className="col-span-1 md:col-span-2 border-t border-slate-100 dark:border-slate-800 pt-4 flex items-center justify-between shrink-0">
+            <div>
+              {!propertyToEdit && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
                     resetToDefault();
-                  }
-                }}
-                className="mr-auto px-4 py-2.5 rounded-xl border border-red-200 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-955/20 text-red-600 dark:text-red-400 text-xs font-bold transition"
-              >
-                Limpar Campos
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-600 dark:text-slate-400 text-xs font-bold transition"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className={`px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-slate-950 dark:text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm ${
-                submitting ? 'opacity-60 cursor-not-allowed' : ''
-              }`}
-            >
-              {submitting ? (
-                <>
-                  <span className="w-3.5 h-3.5 border-2 border-slate-950 dark:border-white border-t-transparent rounded-full animate-spin"></span>
-                  <span>Salvando...</span>
-                </>
-              ) : (
-                <>
-                  <Save size={14} />
-                  <span>{propertyToEdit ? 'Salvar Alterações' : 'Cadastrar Empreendimento'}</span>
-                </>
+                    toast.info('Campos resetados.');
+                  }}
+                >
+                  Limpar Formulário
+                </Button>
               )}
-            </button>
+            </div>
+
+            <div className="flex gap-2.5">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+              >
+                Cancelar
+              </Button>
+              
+              <Button
+                type="submit"
+                variant="primary"
+                isLoading={submitting}
+                icon={Save}
+              >
+                {propertyToEdit ? 'Salvar Alterações' : 'Cadastrar Empreendimento'}
+              </Button>
+            </div>
           </div>
 
         </form>
