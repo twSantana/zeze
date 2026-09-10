@@ -286,7 +286,7 @@ function AppContent({ theme, onThemeToggle }) {
         if (formData.images && formData.images.length > 0) {
           const uploaded = await uploadPropertyImages(formData.images, created.id);
           if (uploaded && uploaded.length > 0) {
-            const updatedWithCover = await updateProperty(created.id, { imagem_url: uploaded[0].url });
+            const updatedWithCover = await updateProperty(created.id, { ...formData, imagem_url: uploaded[0].url });
             createdWithCoords = { ...updatedWithCover, lat: formData.lat, lng: formData.lng };
           }
         }

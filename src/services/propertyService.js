@@ -26,9 +26,24 @@ export async function getPropertiesBbox({ minLng, minLat, maxLng, maxLat }) {
   return data || [];
 }
 
+export function parsePtBrNumber(val) {
+  if (val === null || val === undefined || val === '') return 0;
+  if (typeof val === 'number') return val;
+  let str = String(val).trim();
+  
+  if (str.includes(',')) {
+    str = str.replace(/\./g, '').replace(',', '.');
+  } else if (/^\d{1,3}(\.\d{3})+$/.test(str)) {
+    str = str.replace(/\./g, '');
+  }
+  
+  const parsed = parseFloat(str);
+  return isNaN(parsed) ? 0 : parsed;
+}
+
 export function calculateFaixa(preco) {
-  const p = parseFloat(preco);
-  if (isNaN(p)) return 'Faixa 2';
+  const p = parsePtBrNumber(preco);
+  if (isNaN(p) || p <= 0) return 'Faixa 2';
   if (p <= 275000) return 'Faixa 2';
   if (p <= 400000) return 'Faixa 3';
   if (p <= 600000) return 'Faixa 4';
@@ -44,22 +59,33 @@ export async function addProperty(propertyData, user) {
     throw new Error('Usuário não autenticado. Faça login antes de cadastrar um imóvel.');
   }
 
-  const wktLocation = `POINT(${propertyData.lng} ${propertyData.lat})`;
+  const lat = parseFloat(propertyData.lat);
+  const lng = parseFloat(propertyData.lng);
+
+  if (isNaN(lat) || isNaN(lng)) {
+    throw new Error('Coordenadas geográficas (latitude e longitude) inválidas. Selecione um ponto no mapa.');
+  }
+
+  const wktLocation = `POINT(${lng} ${lat})`;
+  const precoNum = parsePtBrNumber(propertyData.preco);
+  const areaMinNum = parsePtBrNumber(propertyData.area_m2);
+  const areaMaxNum = propertyData.area_max_m2 ? parsePtBrNumber(propertyData.area_max_m2) : areaMinNum;
+
   const { data, error } = await supabase
     .from('empreendimentos')
     .insert([{
       titulo: propertyData.titulo,
       tipo: propertyData.tipo,
       status: propertyData.status,
-      preco: parseFloat(propertyData.preco),
+      preco: precoNum,
       quartos: parseInt(propertyData.quartos || 0),
       vagas: parseInt(propertyData.vagas || 0),
-      area_m2: parseFloat(propertyData.area_m2),
-      imagem_url: propertyData.imagem_url,
+      area_m2: areaMinNum,
+      imagem_url: propertyData.imagem_url || '',
       endereco: propertyData.endereco,
       bairro: propertyData.bairro,
       cidade: propertyData.cidade,
-      conteudo_url: propertyData.conteudo_url,
+      conteudo_url: propertyData.conteudo_url || '',
       localizacao: wktLocation,
       created_by: user.id,
       created_by_name: user.nome,
@@ -69,8 +95,8 @@ export async function addProperty(propertyData, user) {
       averbacao: propertyData.averbacao || '',
       quartos_max: propertyData.quartos_max ? parseInt(propertyData.quartos_max) : parseInt(propertyData.quartos || 0),
       vagas_max: propertyData.vagas_max ? parseInt(propertyData.vagas_max) : parseInt(propertyData.vagas || 0),
-      area_max_m2: propertyData.area_max_m2 ? parseFloat(propertyData.area_max_m2) : parseFloat(propertyData.area_m2),
-      faixa: calculateFaixa(propertyData.preco),
+      area_max_m2: areaMaxNum,
+      faixa: calculateFaixa(precoNum),
       drive_url: propertyData.drive_url || '',
       previsao_entrega: (propertyData.status === 'Lançamento' || propertyData.status === 'Em Obras') ? (propertyData.previsao_entrega || '') : ''
     }])
@@ -86,8 +112,8 @@ export async function addProperty(propertyData, user) {
 
   return {
     ...data[0],
-    lat: propertyData.lat,
-    lng: propertyData.lng
+    lat,
+    lng
   };
 }
 
@@ -97,33 +123,49 @@ export async function addProperty(propertyData, user) {
 export async function updateProperty(id, propertyData) {
   assertSupabaseConfigured();
 
-  const wktLocation = `POINT(${propertyData.lng} ${propertyData.lat})`;
+  const updatePayload = {};
+
+  if (propertyData.titulo !== undefined) updatePayload.titulo = propertyData.titulo;
+  if (propertyData.tipo !== undefined) updatePayload.tipo = propertyData.tipo;
+  if (propertyData.status !== undefined) updatePayload.status = propertyData.status;
+  if (propertyData.preco !== undefined && propertyData.preco !== '') {
+    const precoNum = parsePtBrNumber(propertyData.preco);
+    updatePayload.preco = precoNum;
+    updatePayload.faixa = calculateFaixa(precoNum);
+  }
+  if (propertyData.quartos !== undefined) updatePayload.quartos = parseInt(propertyData.quartos || 0);
+  if (propertyData.vagas !== undefined) updatePayload.vagas = parseInt(propertyData.vagas || 0);
+  if (propertyData.area_m2 !== undefined && propertyData.area_m2 !== '') {
+    updatePayload.area_m2 = parsePtBrNumber(propertyData.area_m2);
+  }
+  if (propertyData.imagem_url !== undefined) updatePayload.imagem_url = propertyData.imagem_url;
+  if (propertyData.endereco !== undefined) updatePayload.endereco = propertyData.endereco;
+  if (propertyData.bairro !== undefined) updatePayload.bairro = propertyData.bairro;
+  if (propertyData.cidade !== undefined) updatePayload.cidade = propertyData.cidade;
+  if (propertyData.conteudo_url !== undefined) updatePayload.conteudo_url = propertyData.conteudo_url;
+  if (propertyData.drive_url !== undefined) updatePayload.drive_url = propertyData.drive_url;
+  if (propertyData.prioridade !== undefined) updatePayload.prioridade = Boolean(propertyData.prioridade);
+  if (propertyData.observacoes !== undefined) updatePayload.observacoes = propertyData.observacoes || '';
+  if (propertyData.averbacao !== undefined) updatePayload.averbacao = propertyData.averbacao || '';
+  if (propertyData.quartos_max !== undefined) updatePayload.quartos_max = propertyData.quartos_max ? parseInt(propertyData.quartos_max) : parseInt(propertyData.quartos || 0);
+  if (propertyData.vagas_max !== undefined) updatePayload.vagas_max = propertyData.vagas_max ? parseInt(propertyData.vagas_max) : parseInt(propertyData.vagas || 0);
+  if (propertyData.area_max_m2 !== undefined && propertyData.area_max_m2 !== '') {
+    updatePayload.area_max_m2 = parsePtBrNumber(propertyData.area_max_m2);
+  }
+  if (propertyData.previsao_entrega !== undefined) updatePayload.previsao_entrega = propertyData.previsao_entrega;
+
+  // Apenas atualiza a localização se lat e lng válidos tiverem sido informados
+  if (propertyData.lat !== undefined && propertyData.lng !== undefined && propertyData.lat !== null && propertyData.lng !== null) {
+    const lat = parseFloat(propertyData.lat);
+    const lng = parseFloat(propertyData.lng);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      updatePayload.localizacao = `POINT(${lng} ${lat})`;
+    }
+  }
+
   const { data, error } = await supabase
     .from('empreendimentos')
-    .update({
-      titulo: propertyData.titulo,
-      tipo: propertyData.tipo,
-      status: propertyData.status,
-      preco: parseFloat(propertyData.preco),
-      quartos: parseInt(propertyData.quartos || 0),
-      vagas: parseInt(propertyData.vagas || 0),
-      area_m2: parseFloat(propertyData.area_m2),
-      imagem_url: propertyData.imagem_url,
-      endereco: propertyData.endereco,
-      bairro: propertyData.bairro,
-      cidade: propertyData.cidade,
-      conteudo_url: propertyData.conteudo_url,
-      localizacao: wktLocation,
-      prioridade: Boolean(propertyData.prioridade),
-      observacoes: propertyData.observacoes || '',
-      averbacao: propertyData.averbacao || '',
-      quartos_max: propertyData.quartos_max ? parseInt(propertyData.quartos_max) : parseInt(propertyData.quartos || 0),
-      vagas_max: propertyData.vagas_max ? parseInt(propertyData.vagas_max) : parseInt(propertyData.vagas || 0),
-      area_max_m2: propertyData.area_max_m2 ? parseFloat(propertyData.area_max_m2) : parseFloat(propertyData.area_m2),
-      faixa: calculateFaixa(propertyData.preco),
-      drive_url: propertyData.drive_url || '',
-      previsao_entrega: (propertyData.status === 'Lançamento' || propertyData.status === 'Em Obras') ? (propertyData.previsao_entrega || '') : ''
-    })
+    .update(updatePayload)
     .eq('id', id)
     .select();
 
@@ -137,8 +179,8 @@ export async function updateProperty(id, propertyData) {
 
   return {
     ...data[0],
-    lat: propertyData.lat,
-    lng: propertyData.lng
+    lat: propertyData.lat !== undefined ? parseFloat(propertyData.lat) : data[0].lat,
+    lng: propertyData.lng !== undefined ? parseFloat(propertyData.lng) : data[0].lng
   };
 }
 
