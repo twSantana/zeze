@@ -65,7 +65,7 @@ export default function LoginScreen({ onThemeToggle, theme }) {
               <Building size={28} />
             </div>
             <h1 className="text-xl font-extrabold text-slate-900 dark:text-white font-sans uppercase tracking-wider">
-              Mapa Zelony
+              SellMaps
             </h1>
             <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
               Plataforma de Corretores & Consultores

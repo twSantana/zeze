@@ -1,5 +1,5 @@
 -- =========================================================================
--- SISTEMA DE MAPEAMENTO IMOBILIÁRIO - MIGRATION SCRIPT V2
+-- SISTEMA DE SELLMAPS - MIGRATION SCRIPT V2
 -- RUN THIS IN YOUR SUPABASE SQL EDITOR TO SUPPORT RANGES / MULTIPLE TYPOLOGIES
 -- =========================================================================
 

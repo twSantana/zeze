@@ -75,7 +75,7 @@ export default function Sidebar({
           </div>
           <div>
             <h1 className="font-extrabold text-base tracking-tight text-white flex items-center gap-1.5">
-              Zelony <span className="text-emerald-400 font-bold text-xs uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">Imóveis</span>
+              Sell<span className="text-emerald-400 font-bold text-xs uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">Maps</span>
             </h1>
             <span className="text-[11px] text-slate-400 font-medium">Curitiba & Região Metropolitana</span>
           </div>

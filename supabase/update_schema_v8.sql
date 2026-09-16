@@ -1,5 +1,5 @@
 -- =========================================================================
--- SISTEMA DE MAPEAMENTO IMOBILIÁRIO - MIGRATION SCRIPT V8
+-- SISTEMA DE SELLMAPS - MIGRATION SCRIPT V8
 -- RUN THIS IN YOUR SUPABASE SQL EDITOR TO REPAIR PROPERTY_IMAGES SCHEMA AND RLS
 -- =========================================================================
 

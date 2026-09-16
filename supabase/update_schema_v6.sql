@@ -1,5 +1,5 @@
 -- =========================================================================
--- SISTEMA DE MAPEAMENTO IMOBILIÁRIO - MIGRATION SCRIPT V6
+-- SISTEMA DE SELLMAPS - MIGRATION SCRIPT V6
 -- RUN THIS IN YOUR SUPABASE SQL EDITOR TO SUPPORT FAIXA AND DRIVE_URL
 -- =========================================================================
 

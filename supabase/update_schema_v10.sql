@@ -1,5 +1,5 @@
 -- =========================================================================
--- SISTEMA DE MAPEAMENTO IMOBILIÁRIO - MIGRATION SCRIPT V10
+-- SISTEMA DE SELLMAPS - MIGRATION SCRIPT V10
 -- RUN THIS IN YOUR SUPABASE SQL EDITOR TO FIX CONSTRUTORAS RLS POLICIES
 -- =========================================================================
 

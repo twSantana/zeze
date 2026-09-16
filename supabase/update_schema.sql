@@ -1,5 +1,5 @@
 -- =========================================================================
--- SISTEMA DE MAPEAMENTO IMOBILIÁRIO - MIGRATION SCRIPT
+-- SISTEMA DE SELLMAPS - MIGRATION SCRIPT
 -- RUN THIS IN YOUR SUPABASE SQL EDITOR
 -- =========================================================================
 

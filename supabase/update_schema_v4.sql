@@ -1,5 +1,5 @@
 -- =========================================================================
--- SISTEMA DE MAPEAMENTO IMOBILIÁRIO - MIGRATION SCRIPT V4
+-- SISTEMA DE SELLMAPS - MIGRATION SCRIPT V4
 -- RUN THIS IN YOUR SUPABASE SQL EDITOR TO SETUP MULTIPLE IMAGES PER PROPERTY
 -- =========================================================================
 

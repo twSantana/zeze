@@ -1,5 +1,5 @@
 -- =========================================================================
--- SISTEMA DE MAPEAMENTO IMOBILIÁRIO - MIGRATION SCRIPT V11
+-- SISTEMA DE SELLMAPS - MIGRATION SCRIPT V11
 -- RUN THIS IN YOUR SUPABASE SQL EDITOR TO SECURE THE ROLES AND DATA
 -- =========================================================================
 

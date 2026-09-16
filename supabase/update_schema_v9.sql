@@ -1,5 +1,5 @@
 -- =========================================================================
--- SISTEMA DE MAPEAMENTO IMOBILIÁRIO - MIGRATION SCRIPT V9
+-- SISTEMA DE SELLMAPS - MIGRATION SCRIPT V9
 -- RUN THIS IN YOUR SUPABASE SQL EDITOR TO SETUP SOLD PROPERTIES HIDING
 -- =========================================================================
 

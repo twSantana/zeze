@@ -1,5 +1,5 @@
 -- =========================================================================
--- SISTEMA DE MAPEAMENTO IMOBILIÁRIO (CURITIBA & RMC)
+-- SISTEMA DE SELLMAPS (CURITIBA & RMC)
 -- SCRIPT DE CONFIGURAÇÃO DO BANCO DE DADOS (SUPABASE / POSTGRESQL)
 -- =========================================================================
 

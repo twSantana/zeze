@@ -12,7 +12,7 @@ O Resend é extremamente moderno, rápido e fácil de configurar.
 
 ### Passo 1: Criar Conta no Resend e Validar Domínio
 1. Crie uma conta gratuita em [resend.com](https://resend.com).
-2. Vá em **Domains** e adicione o domínio do seu site/empresa (ex: `zelonyimoveis.com.br`).
+2. Vá em **Domains** e adicione o domínio do seu site/empresa (ex: `sellmaps.com.br`).
 3. Adicione os registros DNS (TXT e MX) fornecidos pelo Resend no seu gerenciador de domínio (ex: Registro.br, Hostgator, Cloudflare) para validar que o domínio é seu.
 4. Vá em **API Keys**, clique em **Create API Key**, dê permissão de escrita/envio e copie a chave gerada (ela começa com `re_`).
 
@@ -22,8 +22,8 @@ O Resend é extremamente moderno, rápido e fácil de configurar.
 3. Role a página até a seção **SMTP Provider** (Provedor SMTP).
 4. Ative o switch **Enable Custom SMTP** (Habilitar SMTP Customizado).
 5. Preencha as credenciais do Resend:
-   * **Sender Email**: O e-mail de envio desejado (ex: `cadastro@zelonyimoveis.com.br` ou `contato@zelonyimoveis.com.br`).
-   * **Sender Name**: `Mapa Zelony` ou `Zelony Imóveis`.
+   * **Sender Email**: O e-mail de envio desejado (ex: `cadastro@sellmaps.com.br` ou `contato@sellmaps.com.br`).
+   * **Sender Name**: `SellMaps`.
    * **Host**: `smtp.resend.com`
    * **Port**: `587`
    * **Username**: `resend`
@@ -44,8 +44,8 @@ Se precisar de um limite diário maior, o Brevo é uma ótima alternativa de SMT
 
 ### Passo 2: Configurar no Painel do Supabase
 1. No painel do Supabase > **Project Settings** > **Auth** > **SMTP Provider**:
-   * **Sender Email**: O e-mail configurado no Brevo (ex: `contato@zelonyimoveis.com.br`).
-   * **Sender Name**: `Mapa Zelony`.
+   * **Sender Email**: O e-mail configurado no Brevo (ex: `contato@sellmaps.com.br`).
+   * **Sender Name**: `SellMaps`.
    * **Host**: `smtp-relay.brevo.com`
    * **Port**: `587`
    * **Username**: Seu e-mail de login do Brevo (ou chave de API de SMTP).
@@ -63,8 +63,8 @@ Agora que o SMTP está configurado, você pode personalizar os textos e links do
    * **Confirm Signup (Confirmação de Cadastro)**: Enviado automaticamente quando um novo usuário se registra ou é criado.
    * **Reset Password (Redefinição de Senha)**: Enviado quando o usuário solicita redefinição.
    * **Invite User (Convite de Usuário)**: E-mail que contém o link de ativação da conta.
-3. Você pode escrever o texto em português, estilizar com HTML (deixar as cores e logo do Mapa Zelony) e incluir variáveis nativas do Supabase como `{{ .ConfirmationURL }}` (link de confirmação) e `{{ .Email }}` (e-mail do destinatário).
+3. Você pode escrever o texto em português, estilizar com HTML (deixar as cores e logo do SellMaps) e incluir variáveis nativas do Supabase como `{{ .ConfirmationURL }}` (link de confirmação) e `{{ .Email }}` (e-mail do destinatário).
 
 ---
 
-Pronto! Ao seguir este guia, o seu fluxo de e-mails para novos usuários e redefinição de senhas funcionará instantaneamente sem custo algum e sob a marca própria da **Zelony Imóveis**.
+Pronto! Ao seguir este guia, o seu fluxo de e-mails para novos usuários e redefinição de senhas funcionará instantaneamente sem custo algum e sob a marca própria da **SellMaps**.

@@ -1,5 +1,5 @@
 -- =========================================================================
--- SISTEMA DE MAPEAMENTO IMOBILIÁRIO - MIGRATION SCRIPT V3
+-- SISTEMA DE SELLMAPS - MIGRATION SCRIPT V3
 -- RUN THIS IN YOUR SUPABASE SQL EDITOR TO CREATE THE CONSTRUTORAS TABLE
 -- =========================================================================
 

@@ -1,5 +1,5 @@
 -- =========================================================================
--- SISTEMA DE MAPEAMENTO IMOBILIÁRIO - MIGRATION SCRIPT V7
+-- SISTEMA DE SELLMAPS - MIGRATION SCRIPT V7
 -- RUN THIS IN YOUR SUPABASE SQL EDITOR TO FALLBACK COVER IMAGE TO FIRST ATTACHMENT
 -- =========================================================================
 

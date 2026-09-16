@@ -1,5 +1,5 @@
 -- =========================================================================
--- SISTEMA DE MAPEAMENTO IMOBILIÁRIO - MIGRATION SCRIPT V14
+-- SISTEMA DE SELLMAPS - MIGRATION SCRIPT V14
 -- RUN THIS IN YOUR SUPABASE SQL EDITOR TO UPDATE SCHEMA & POLICIES
 -- =========================================================================
 

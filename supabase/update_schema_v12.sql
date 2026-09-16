@@ -1,5 +1,5 @@
 -- =========================================================================
--- SISTEMA DE MAPEAMENTO IMOBILIÁRIO - MIGRATION SCRIPT V12
+-- SISTEMA DE SELLMAPS - MIGRATION SCRIPT V12
 -- RUN THIS IN YOUR SUPABASE SQL EDITOR TO UPDATE MY PROPERTIES TAB FILTERING
 -- =========================================================================
 

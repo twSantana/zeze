@@ -439,7 +439,7 @@ function AppContent({ theme, onThemeToggle }) {
                 <Building size={14} />
               </div>
               <div>
-                <h2 className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-none">Mapa Zelony</h2>
+                <h2 className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-none">SellMaps</h2>
                 <span className="text-[8px] text-slate-400 dark:text-slate-500 font-medium">Painel do Consultor</span>
               </div>
             </div>
@@ -559,7 +559,7 @@ function AppContent({ theme, onThemeToggle }) {
               </div>
               <h2 className="text-lg font-black text-slate-900 dark:text-white">Primeiro Acesso: WhatsApp</h2>
               <p className="text-xs text-slate-550 dark:text-slate-400 mt-1.5 leading-normal">
-                Para prosseguir e acessar o painel do <strong>Mapa Zelony</strong>, é obrigatório cadastrar o seu número de WhatsApp de trabalho.
+                Para prosseguir e acessar o painel do <strong>SellMaps</strong>, é obrigatório cadastrar o seu número de WhatsApp de trabalho.
               </p>
             </div>
 

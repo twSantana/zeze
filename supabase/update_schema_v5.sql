@@ -1,5 +1,5 @@
 -- =========================================================================
--- SISTEMA DE MAPEAMENTO IMOBILIÁRIO - MIGRATION SCRIPT V5
+-- SISTEMA DE SELLMAPS - MIGRATION SCRIPT V5
 -- RUN THIS IN YOUR SUPABASE SQL EDITOR TO ADD TELEPHONE AND AVATAR COLS
 -- =========================================================================
 
