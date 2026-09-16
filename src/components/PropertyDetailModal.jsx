@@ -228,10 +228,11 @@ export default function PropertyDetailModal({ isOpen, onClose, property, onConta
           </div>
         </div>
 
-        {/* Lado Direito: Detalhes Técnicos e Conteúdo com Scroll Próprio */}
-        <div className="w-full md:w-1/2 p-5 md:p-6 flex flex-col justify-between overflow-y-auto h-auto md:h-full">
+        {/* Lado Direito: Detalhes Técnicos e Conteúdo com Scroll Próprio e Rodapé Fixo */}
+        <div className="w-full md:w-1/2 flex flex-col h-full overflow-hidden bg-white dark:bg-slate-900">
           
-          <div className="space-y-4">
+          {/* Conteúdo Rolável */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-5 md:p-6 space-y-4">
             
             {/* Badges Principais */}
             <div className="flex flex-wrap gap-2 items-center">
@@ -315,18 +316,16 @@ export default function PropertyDetailModal({ isOpen, onClose, property, onConta
             {/* Averbação */}
             {renderAverbacaoSection()}
 
-            {/* Observações / Descrição com Scroll Interno */}
+            {/* Observações / Descrição Sem Armadilha de Scroll Duplo */}
             {property.observacoes && (
-              <div className="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/60 dark:border-slate-800 flex flex-col max-h-48">
-                <div className="flex items-center gap-2 mb-2 shrink-0">
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/60 dark:border-slate-800 flex flex-col gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <FileText className="w-4 h-4 text-slate-400" />
                   <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Descrição & Notas Internas</h4>
                 </div>
-                <div className="overflow-y-auto pr-2 custom-scrollbar flex-1">
-                  <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line font-medium">
-                    {property.observacoes}
-                  </p>
-                </div>
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line font-medium">
+                  {property.observacoes}
+                </p>
               </div>
             )}
 
@@ -340,8 +339,8 @@ export default function PropertyDetailModal({ isOpen, onClose, property, onConta
 
           </div>
 
-          {/* Botões de Ação */}
-          <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2.5 bg-white dark:bg-slate-900 shrink-0">
+          {/* Botões de Ação Fixos no Rodapé */}
+          <div className="p-4 md:px-6 md:py-4 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2.5 bg-slate-50/50 dark:bg-slate-900 shrink-0">
             <div className="flex flex-col sm:flex-row gap-2.5 w-full">
               {property.conteudo_url && (
                 <a
@@ -374,7 +373,7 @@ export default function PropertyDetailModal({ isOpen, onClose, property, onConta
               <Button
                 variant="primary"
                 size="lg"
-                className="w-full"
+                className="w-full shadow-lg shadow-emerald-500/20"
                 onClick={() => onContactClick(property)}
               >
                 Falar com Consultor Responsável
@@ -382,7 +381,7 @@ export default function PropertyDetailModal({ isOpen, onClose, property, onConta
             )}
 
             {(canEdit || canDelete) && (
-              <div className="flex gap-2 w-full pt-2 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex gap-2 w-full pt-2 border-t border-slate-200/60 dark:border-slate-800">
                 {canEdit && (
                   <Button
                     variant="outline"

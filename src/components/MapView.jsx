@@ -236,6 +236,16 @@ function MarkerClusterer({ properties, hoveredPropertyId, onPropertyClick, theme
         offset: [0, -10]
       });
 
+      marker.on('mouseover', () => {
+        marker.openPopup();
+      });
+
+      marker.on('mouseout', () => {
+        if (hoveredPropertyId !== prop.id) {
+          marker.closePopup();
+        }
+      });
+
       marker.on('click', () => {
         if (onPropertyClick) onPropertyClick(prop);
       });
@@ -250,9 +260,13 @@ function MarkerClusterer({ properties, hoveredPropertyId, onPropertyClick, theme
     if (hoveredPropertyId) {
       const marker = markersMapRef.current.get(hoveredPropertyId);
       if (marker) {
-        setTimeout(() => {
+        if (clusterGroupRef.current && typeof clusterGroupRef.current.zoomToShowLayer === 'function') {
+          clusterGroupRef.current.zoomToShowLayer(marker, () => {
+            marker.openPopup();
+          });
+        } else {
           marker.openPopup();
-        }, 50);
+        }
       }
     } else {
       map.closePopup();
