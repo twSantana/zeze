@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Badge } from './ui/Badge';
 import { Button } from './ui/Button';
 import { SafeImage } from './ui/SafeImage';
+import { formatCodigoRef } from '../services/propertyService';
 
 export default function PropertyCard({ 
   property, 
@@ -93,6 +94,9 @@ export default function PropertyCard({
 
         {/* Badges Flutuantes Superior Esquerda */}
         <div className="absolute left-3 top-3 flex flex-wrap gap-1.5 z-10">
+          <span className="px-2 py-0.5 rounded-md bg-slate-950/80 text-emerald-400 border border-emerald-500/30 backdrop-blur-md text-[10px] font-extrabold font-mono tracking-wider shadow-sm">
+            {formatCodigoRef(property)}
+          </span>
           {property.prioridade && (
             <Badge variant="gold" size="sm" icon={Star}>
               Prioridade

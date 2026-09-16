@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getMeusEmpreendimentos, togglePropertySold } from '../services/propertyService';
+import { getMeusEmpreendimentos, togglePropertySold, formatCodigoRef } from '../services/propertyService';
 import { useAuth } from '../context/AuthContext';
 import { Building, CheckCircle2, RotateCcw, Loader2, MapPin } from 'lucide-react';
 import { SafeImage } from './ui/SafeImage';
@@ -115,6 +115,9 @@ export default function MyPropertiesTab({ onPropertyUpdate, onPropertyClick }) {
               <div className="flex-grow min-w-0 flex flex-col justify-between py-0.5">
                 <div>
                   <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="px-1.5 py-0.5 text-[8px] font-black font-mono rounded bg-slate-100 dark:bg-slate-800 text-emerald-500 dark:text-emerald-400 border border-emerald-500/20">
+                      {formatCodigoRef(property)}
+                    </span>
                     <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 line-clamp-1 pr-4">
                       {property.titulo}
                     </h4>

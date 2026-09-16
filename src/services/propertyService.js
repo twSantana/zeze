@@ -51,6 +51,125 @@ export function calculateFaixa(preco) {
 }
 
 /**
+ * Formata o código de referência único (ex: SM-0042)
+ */
+export function formatCodigoRef(property) {
+  if (!property) return 'SM-0000';
+  if (property.codigo_ref && String(property.codigo_ref).trim()) {
+    return String(property.codigo_ref).trim();
+  }
+  const idNum = parseInt(property.id, 10);
+  if (!isNaN(idNum)) {
+    return `SM-${String(idNum).padStart(4, '0')}`;
+  }
+  return `SM-${String(property.id || '0000').slice(-4).toUpperCase()}`;
+}
+
+/**
+ * Inserção em Lote (Batch Import)
+ * Restrito a usuários Admin/Master
+ */
+export async function batchAddProperties(propertiesList, user) {
+  assertSupabaseConfigured();
+  if (!user || !user.id) {
+    throw new Error('Usuário não autenticado.');
+  }
+
+  if (user.role !== 'master' && !user.isMaster) {
+    throw new Error('Apenas usuários com privilégios Admin / Master podem realizar importação em lote.');
+  }
+
+  if (!Array.isArray(propertiesList) || propertiesList.length === 0) {
+    throw new Error('A lista de imóveis fornecida está vazia.');
+  }
+
+  // Obter o maior id numérico atual para gerar códigos sequenciais se necessário
+  let currentIdCounter = 1;
+  try {
+    const { data: maxRecord } = await supabase
+      .from('empreendimentos')
+      .select('id')
+      .order('id', { ascending: false })
+      .limit(1);
+
+    if (maxRecord && maxRecord[0] && maxRecord[0].id) {
+      const parsedId = parseInt(maxRecord[0].id, 10);
+      if (!isNaN(parsedId)) currentIdCounter = parsedId + 1;
+    }
+  } catch (e) {
+    console.warn('Erro ao consultar id máximo para codigo_ref:', e);
+  }
+
+  const recordsToInsert = propertiesList.map((item, idx) => {
+    const lat = parseFloat(item.lat);
+    const lng = parseFloat(item.lng);
+    const wktLocation = `POINT(${lng} ${lat})`;
+    const precoNum = parsePtBrNumber(item.preco);
+    const areaMinNum = parsePtBrNumber(item.area_m2);
+    const areaMaxNum = item.area_max_m2 ? parsePtBrNumber(item.area_max_m2) : areaMinNum;
+    const generatedCode = item.codigo_ref || `SM-${String(currentIdCounter + idx).padStart(4, '0')}`;
+
+    const rec = {
+      titulo: item.titulo || 'Empreendimento Sem Título',
+      tipo: item.tipo || 'Apartamento',
+      status: item.status || 'Pronto',
+      preco: precoNum,
+      quartos: parseInt(item.quartos || 0),
+      vagas: parseInt(item.vagas || 0),
+      area_m2: areaMinNum,
+      imagem_url: item.imagem_url || '',
+      endereco: item.endereco || '',
+      bairro: item.bairro || '',
+      cidade: item.cidade || 'Curitiba',
+      conteudo_url: item.conteudo_url || '',
+      localizacao: wktLocation,
+      created_by: user.id,
+      created_by_name: user.nome || 'Admin',
+      created_by_role: user.role || 'master',
+      prioridade: Boolean(item.prioridade),
+      observacoes: item.observacoes || '',
+      averbacao: item.averbacao || '',
+      quartos_max: item.quartos_max ? parseInt(item.quartos_max) : parseInt(item.quartos || 0),
+      vagas_max: item.vagas_max ? parseInt(item.vagas_max) : parseInt(item.vagas || 0),
+      area_max_m2: areaMaxNum,
+      faixa: calculateFaixa(precoNum),
+      drive_url: item.drive_url || '',
+      previsao_entrega: (item.status === 'Lançamento' || item.status === 'Em Obras') ? (item.previsao_entrega || '') : ''
+    };
+
+    if (generatedCode) {
+      rec.codigo_ref = generatedCode;
+    }
+
+    return rec;
+  });
+
+  let data, error;
+  try {
+    const res = await supabase.from('empreendimentos').insert(recordsToInsert).select();
+    data = res.data;
+    error = res.error;
+  } catch (err) {
+    error = err;
+  }
+
+  // Fallback se a coluna codigo_ref ainda não existir no banco
+  if (error && (error.code === '42703' || (error.message && error.message.includes('codigo_ref')))) {
+    const recordsWithoutCode = recordsToInsert.map(({ codigo_ref, ...rest }) => rest);
+    const retryRes = await supabase.from('empreendimentos').insert(recordsWithoutCode).select();
+    data = retryRes.data;
+    error = retryRes.error;
+  }
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
+
+/**
  * Criação
  */
 export async function addProperty(propertyData, user) {

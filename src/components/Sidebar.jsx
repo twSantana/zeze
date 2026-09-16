@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, SlidersHorizontal, Plus, LogOut, Moon, Sun, 
   Users, Building, MapPin, Phone, Trash2, Mail, Info,
-  User, Camera, Check, Briefcase, Sparkles, Filter, ChevronDown
+  User, Camera, Check, Briefcase, Sparkles, Filter, ChevronDown, FileSpreadsheet
 } from 'lucide-react';
 import { uploadAvatar } from '../services/propertyService';
 import PropertyCard from './PropertyCard';
@@ -24,6 +24,7 @@ export default function Sidebar({
   hoveredPropertyId,
   onPropertyClick,
   onAddClick,
+  onBatchImportClick,
   onEditClick,
   onDeleteClick,
   onContactClick,
@@ -275,16 +276,29 @@ export default function Sidebar({
               </span>
             </div>
 
-            {isCorretor && (
-              <Button
-                variant="primary"
-                size="sm"
-                icon={Plus}
-                onClick={onAddClick}
-              >
-                Novo Imóvel
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {isMaster && onBatchImportClick && (
+                <button
+                  onClick={onBatchImportClick}
+                  className="py-1.5 px-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 dark:text-emerald-400 border border-emerald-500/20 text-xs font-bold flex items-center gap-1.5 transition"
+                  title="Importar múltiplos imóveis em lote via planilha CSV (Exclusivo Admin/Master)"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  <span>Importar Lote</span>
+                </button>
+              )}
+
+              {isCorretor && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={Plus}
+                  onClick={onAddClick}
+                >
+                  Novo Imóvel
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Listagem de Cartões */}

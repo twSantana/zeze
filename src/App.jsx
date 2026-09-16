@@ -8,6 +8,7 @@ import LoginScreen from './components/LoginScreen';
 import AdminModal from './components/AdminModal';
 import LeadModal from './components/LeadModal';
 import PropertyDetailModal from './components/PropertyDetailModal';
+import BatchImportModal from './components/BatchImportModal';
 import { getPropertiesBbox, addProperty, updateProperty, deleteProperty, uploadPropertyImages } from './services/propertyService';
 import { Building, Plus, Key } from 'lucide-react';
 import { supabase } from './services/supabase';
@@ -73,6 +74,7 @@ function AppContent({ theme, onThemeToggle }) {
   // Estados dos Modais
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [propertyToEdit, setPropertyToEdit] = useState(null);
+  const [isBatchImportOpen, setIsBatchImportOpen] = useState(false);
   
   // Leads
   const [isLeadOpen, setIsLeadOpen] = useState(false);
@@ -396,6 +398,7 @@ function AppContent({ theme, onThemeToggle }) {
           hoveredPropertyId={hoveredPropertyId}
           onPropertyClick={handlePropertyFocus}
           onAddClick={handleAddClick}
+          onBatchImportClick={() => setIsBatchImportOpen(true)}
           onEditClick={handleEditClick}
           onDeleteClick={handleDeleteClick}
           onContactClick={handleContactClick}
@@ -503,6 +506,16 @@ function AppContent({ theme, onThemeToggle }) {
         onContactClick={handleContactClick}
         onEdit={handleEditClick}
         onDelete={handleDeleteClick}
+      />
+
+      <BatchImportModal
+        isOpen={isBatchImportOpen}
+        onClose={() => setIsBatchImportOpen(false)}
+        onSuccess={() => {
+          if (bbox) {
+            fetchPropertiesInBbox(bbox, clickedProperties);
+          }
+        }}
       />
 
       {/* Modal de Redefinição de Senha (Password Recovery) */}

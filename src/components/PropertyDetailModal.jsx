@@ -4,7 +4,7 @@ import {
   ExternalLink, ShieldCheck, FileText, Star, Landmark, Award,
   ChevronLeft, ChevronRight, FolderOpen, Edit3, Trash2, Calendar, Building
 } from 'lucide-react';
-import { getPropertyImages } from '../services/propertyService';
+import { getPropertyImages, formatCodigoRef } from '../services/propertyService';
 import { useAuth } from '../context/AuthContext';
 import { Badge } from './ui/Badge';
 import { Button } from './ui/Button';
@@ -231,6 +231,9 @@ export default function PropertyDetailModal({ isOpen, onClose, property, onConta
             
             {/* Badges Principais */}
             <div className="flex flex-wrap gap-2 items-center">
+              <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-black font-mono tracking-wider">
+                REF: {formatCodigoRef(property)}
+              </span>
               <Badge variant={getStatusBadgeVariant(property.status)} size="md">
                 {property.status}
               </Badge>
