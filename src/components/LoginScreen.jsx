@@ -61,9 +61,11 @@ export default function LoginScreen({ onThemeToggle, theme }) {
           
           {/* Logo / Título */}
           <div className="flex flex-col items-center text-center mb-6">
-            <div className="p-3 rounded-2xl bg-emerald-500 text-slate-950 mb-3 shadow-lg shadow-emerald-500/10">
-              <Building size={28} />
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="SellMaps" 
+              className="w-20 h-20 rounded-3xl object-cover mb-3 shadow-xl shadow-emerald-500/20 border border-emerald-500/30" 
+            />
             <h1 className="text-xl font-extrabold text-slate-900 dark:text-white font-sans uppercase tracking-wider">
               SellMaps
             </h1>

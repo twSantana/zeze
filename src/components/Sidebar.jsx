@@ -70,9 +70,11 @@ export default function Sidebar({
       {/* Header com Logo, Perfil e Dark Mode Toggle */}
       <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-950 text-white shrink-0">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-slate-950 shrink-0 shadow-lg shadow-emerald-500/20">
-            <Building className="w-5 h-5 text-white" />
-          </div>
+          <img 
+            src="/logo.png" 
+            alt="SellMaps" 
+            className="w-10 h-10 rounded-2xl object-cover shadow-lg shadow-emerald-500/20 border border-emerald-500/30 shrink-0" 
+          />
           <div>
             <h1 className="font-extrabold text-base tracking-tight text-white flex items-center gap-1.5">
               Sell<span className="text-emerald-400 font-bold text-xs uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">Maps</span>

@@ -1,6 +1,10 @@
-# 🗺️ SellMaps — Plataforma de Mapeamento & Inteligência Imobiliária
+<div align="center">
+  <img src="./public/logo.png" alt="SellMaps Logo" width="380" style="border-radius: 20px;" />
 
-> Sistema moderno, responsivo e de alta performance para mapeamento geográfico, busca avançada e gestão de empreendimentos imobiliários para corretoras, gerentes e consultores.
+  <h1>🗺️ SellMaps — Plataforma de Mapeamento & Inteligência Imobiliária</h1>
+
+  <p><em>Sistema moderno, responsivo e de alta performance para mapeamento geográfico, busca avançada e gestão de empreendimentos imobiliários para corretoras, gerentes e consultores.</em></p>
+</div>
 
 ---
 

@@ -435,9 +435,11 @@ function AppContent({ theme, onThemeToggle }) {
         <div className="absolute top-4 left-4 right-4 z-[999] pointer-events-none">
           <div className="w-full py-2.5 px-4 rounded-full bg-white/95 dark:bg-slate-900/95 border border-slate-200/80 dark:border-slate-800/85 shadow-lg backdrop-blur-md flex items-center justify-between pointer-events-auto transition-colors">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-full bg-emerald-500 text-slate-950 shrink-0">
-                <Building size={14} />
-              </div>
+              <img 
+                src="/logo.png" 
+                alt="SellMaps" 
+                className="w-7 h-7 rounded-lg object-cover border border-emerald-500/30 shrink-0" 
+              />
               <div>
                 <h2 className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-none">SellMaps</h2>
                 <span className="text-[8px] text-slate-400 dark:text-slate-500 font-medium">Painel do Consultor</span>
