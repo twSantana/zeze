@@ -35,14 +35,15 @@ export default function LoginScreen({ onThemeToggle, theme }) {
   return (
     <div className="relative w-screen h-screen flex items-center justify-center bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden font-sans">
       
-      {/* Background Image with Blur */}
+      {/* Background Image with Ambient Overlay */}
       <div 
-        className="absolute inset-0 bg-cover bg-center transition-all duration-500 scale-105"
+        className="absolute inset-0 bg-cover bg-center transition-all duration-700 scale-105"
         style={{ 
-          backgroundImage: `url('/bg_login.png')`,
-          filter: 'brightness(0.3) blur(4px)'
+          backgroundImage: `url('/logo.png')`,
+          filter: 'brightness(0.35) blur(6px)'
         }}
       />
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent z-[1]" />
 
       {/* Theme Toggle Button (Sol/Lua) no topo superior direito */}
       <div className="absolute top-6 right-6 z-20">
