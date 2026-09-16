@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.markercluster';
+import { sanitizeImageUrl } from './ui/SafeImage';
 
 const INITIAL_CENTER = [-25.4372, -49.2700];
 const INITIAL_ZOOM = 12;
@@ -187,11 +188,12 @@ function MarkerClusterer({ properties, hoveredPropertyId, onPropertyClick, theme
         }).format(value);
       };
 
+      const cleanImgUrl = sanitizeImageUrl(prop.imagem_url);
       const popupContent = `
         <div class="flex flex-col w-[260px] bg-white dark:bg-slate-900 overflow-hidden rounded-xl border ${prop.vendido ? 'border-red-500' : isPriority ? 'border-amber-500' : 'border-transparent'}">
-          ${prop.imagem_url ? `
-            <div class="h-28 w-full overflow-hidden relative">
-              <img src="${prop.imagem_url}" class="w-full h-full object-cover" alt="${prop.titulo}" />
+          ${cleanImgUrl ? `
+            <div class="h-28 w-full overflow-hidden relative bg-slate-950">
+              <img src="${cleanImgUrl}" class="w-full h-full object-cover" alt="${prop.titulo}" onerror="this.style.display='none'" />
               <div class="absolute top-2 left-2 flex gap-1 z-[100]">
                 ${prop.vendido ? `
                   <div class="bg-red-650 text-white px-2 py-0.5 text-[9px] font-black rounded-full shadow-md uppercase">

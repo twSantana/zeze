@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getMeusEmpreendimentos, togglePropertySold } from '../services/propertyService';
 import { useAuth } from '../context/AuthContext';
 import { Building, CheckCircle2, RotateCcw, Loader2, MapPin } from 'lucide-react';
+import { SafeImage } from './ui/SafeImage';
 
 export default function MyPropertiesTab({ onPropertyUpdate, onPropertyClick }) {
   const { user } = useAuth();
@@ -107,13 +108,7 @@ export default function MyPropertiesTab({ onPropertyUpdate, onPropertyClick }) {
             >
               {/* Thumbnail */}
               <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-950 shrink-0 border border-slate-200/30">
-                {property.imagem_url ? (
-                  <img src={property.imagem_url} alt={property.titulo} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-400 text-[9px] font-bold text-center p-1 bg-slate-100 dark:bg-slate-950">
-                    Sem Foto
-                  </div>
-                )}
+                <SafeImage src={property.imagem_url} alt={property.titulo} className="w-full h-full object-cover" fallbackText="Sem Foto" />
               </div>
 
               {/* Informações */}

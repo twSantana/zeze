@@ -8,6 +8,7 @@ import { getPropertyImages } from '../services/propertyService';
 import { useAuth } from '../context/AuthContext';
 import { Badge } from './ui/Badge';
 import { Button } from './ui/Button';
+import { SafeImage } from './ui/SafeImage';
 
 export default function PropertyDetailModal({ isOpen, onClose, property, onContactClick, onEdit, onDelete }) {
   const { user, isGerente, isMaster } = useAuth();
@@ -157,18 +158,12 @@ export default function PropertyDetailModal({ isOpen, onClose, property, onConta
         {/* Lado Esquerdo: Imagem Principal e Galeria */}
         <div className="w-full md:w-1/2 relative bg-slate-950 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800 shrink-0 aspect-video md:aspect-auto md:h-full overflow-hidden flex flex-col justify-center">
           <div className="w-full h-full relative group">
-            {currentImageUrl ? (
-              <img 
-                src={currentImageUrl} 
-                alt={property.titulo} 
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 gap-2">
-                <Building className="w-12 h-12 stroke-[1.5]" />
-                <span className="text-xs">Sem imagens cadastradas</span>
-              </div>
-            )}
+            <SafeImage 
+              src={currentImageUrl} 
+              alt={property.titulo} 
+              className="w-full h-full object-cover"
+              fallbackText="Sem imagens cadastradas"
+            />
 
             {/* Controles de Navegação */}
             {allImages.length > 1 && (
@@ -220,7 +215,7 @@ export default function PropertyDetailModal({ isOpen, onClose, property, onConta
                         : 'border-transparent opacity-60 hover:opacity-100'
                     }`}
                   >
-                    <img src={img.url} alt={`Thumb ${idx + 1}`} className="w-full h-full object-cover" />
+                    <SafeImage src={img.url} alt={`Thumb ${idx + 1}`} className="w-full h-full object-cover" showIcon={false} />
                   </button>
                 ))}
               </div>

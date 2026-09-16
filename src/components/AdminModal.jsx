@@ -10,6 +10,7 @@ import { Input } from './ui/Input';
 import { Select } from './ui/Select';
 import { Badge } from './ui/Badge';
 import { useToast } from './ui/Toast';
+import { SafeImage } from './ui/SafeImage';
 
 function MapClickHandler({ onLocationSelect }) {
   useMapEvents({
@@ -533,7 +534,7 @@ export default function AdminModal({ isOpen, onClose, propertyToEdit, onSave, th
                 <div className="flex gap-2.5 overflow-x-auto py-1 scrollbar-thin">
                   {existingImages.map((img) => (
                     <div key={img.id} className="w-20 h-20 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 relative shrink-0 group">
-                      <img src={img.url} alt="Galeria" className="w-full h-full object-cover" />
+                      <SafeImage src={img.url} alt="Galeria" className="w-full h-full object-cover" showIcon={false} />
                       <button
                         type="button"
                         onClick={() => handleDeleteExistingImage(img.id, img.bucket, img.path)}

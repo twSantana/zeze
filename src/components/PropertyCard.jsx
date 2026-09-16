@@ -3,6 +3,7 @@ import { BedDouble, Car, Maximize, MapPin, Edit3, Trash2, MessageSquare, Home, B
 import { useAuth } from '../context/AuthContext';
 import { Badge } from './ui/Badge';
 import { Button } from './ui/Button';
+import { SafeImage } from './ui/SafeImage';
 
 export default function PropertyCard({ 
   property, 
@@ -79,19 +80,13 @@ export default function PropertyCard({
     >
       {/* Imagem Principal */}
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100 dark:bg-slate-950">
-        {property.imagem_url ? (
-          <img 
-            src={property.imagem_url} 
-            alt={property.titulo}
-            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-            loading="lazy"
-          />
-        ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center bg-slate-100 dark:bg-slate-950 text-slate-400 dark:text-slate-600 text-xs gap-1.5">
-            <Building className="w-8 h-8 stroke-[1.5]" />
-            <span>Sem foto principal</span>
-          </div>
-        )}
+        <SafeImage 
+          src={property.imagem_url} 
+          alt={property.titulo}
+          className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+          fallbackText="Sem foto principal"
+          loading="lazy"
+        />
         
         {/* Overlay em Gradiente Suave */}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent opacity-80 group-hover:opacity-60 transition-opacity" />
