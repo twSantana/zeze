@@ -198,8 +198,6 @@ export function AuthProvider({ children }) {
   const addProfile = async (profileData) => {
     console.log('[DEBUG AUTH] Criando usuário no Supabase Auth via cliente secundário:', profileData.email);
     
-    // Criamos um cliente Supabase secundário sem persistência de sessão local.
-    // Desta forma, o cadastro do novo usuário não desloga o administrador atual do navegador!
     const secondarySupabase = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: false,
@@ -208,61 +206,70 @@ export function AuthProvider({ children }) {
       }
     });
 
-    // Cadastra o usuário no Supabase Auth.
-    // A trigger do banco de dados (on_auth_user_created) intercepta e cria automaticamente o perfil em public.profiles
-    const { data, error } = await secondarySupabase.auth.signUp({
-      email: profileData.email,
-      password: profileData.senha || 'Senhaimprovavel@12321',
-      options: {
-        data: {
-          nome: profileData.nome,
-          role: profileData.role
-        }
-      }
-    });
+    let createdUserId = null;
+    let authError = null;
 
-    if (error) {
-      console.error('[DEBUG AUTH] Erro no Supabase signUp:', error.message);
-      throw error;
-    }
-
-    const createdUserId = data?.user?.id;
-    console.log('[DEBUG AUTH] Usuário cadastrado no auth.users do Supabase. ID:', createdUserId);
-    
-    if (createdUserId) {
-      // Pequena espera para que a trigger do Supabase crie a linha no profiles
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      // Atualiza o cargo (role) e o nome diretamente no banco de dados para garantir que fique registrado!
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          nome: profileData.nome,
-          role: profileData.role,
-          ativo: true
-        })
-        .eq('id', createdUserId);
-
-      if (updateError) {
-        console.error('[DEBUG AUTH] Falha ao atualizar cargo via update, tentando insert de fallback:', updateError.message);
-        // Fallback: Se a trigger não criou a linha, nós inserimos manualmente
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: createdUserId,
+    try {
+      const { data, error } = await secondarySupabase.auth.signUp({
+        email: profileData.email,
+        password: profileData.senha || 'Senhaimprovavel@12321',
+        options: {
+          data: {
             nome: profileData.nome,
-            email: profileData.email,
-            role: profileData.role,
-            ativo: true
-          });
-        if (insertError) {
-          console.error('[DEBUG AUTH] Falha no insert de fallback de perfil:', insertError.message);
+            role: profileData.role
+          }
         }
+      });
+
+      if (error) {
+        authError = error;
+        console.error('[DEBUG AUTH] Erro no Supabase signUp:', error);
+      } else if (data?.user?.id) {
+        createdUserId = data.user.id;
       }
+    } catch (err) {
+      authError = err;
     }
 
-    // Atualiza a lista de perfis
-    refreshProfiles();
+    // Traduz e trata erros de cadastro de Auth
+    if (authError) {
+      const errMsg = authError.message || String(authError);
+      if (errMsg.includes('rate_limit') || authError.status === 429) {
+        throw new Error('O limite de envios de e-mail do Supabase foi excedido. No painel do Supabase (Auth > Settings), desative a confirmação de e-mail obrigatória ("Confirm Email") para permitir cadastros instantâneos.');
+      }
+      if (errMsg.includes('already registered') || errMsg.includes('already exists')) {
+        throw new Error('Este endereço de e-mail já está cadastrado no sistema.');
+      }
+      if (errMsg.includes('invalid') && errMsg.includes('email')) {
+        throw new Error('O e-mail informado é inválido ou foi recusado pelo Supabase.');
+      }
+      throw new Error(`Erro ao criar conta no Supabase: ${errMsg}`);
+    }
+
+    if (createdUserId) {
+      const newProfile = {
+        id: createdUserId,
+        nome: profileData.nome,
+        email: profileData.email,
+        role: profileData.role,
+        ativo: profileData.ativo !== false
+      };
+
+      const { error: upsertError } = await supabase
+        .from('profiles')
+        .upsert(newProfile);
+
+      if (upsertError) {
+        console.error('[DEBUG AUTH] Erro ao gravar perfil no banco profiles:', upsertError);
+      }
+
+      setProfiles(prev => {
+        const filtered = prev.filter(p => p.id !== createdUserId && p.email !== profileData.email);
+        return [...filtered, newProfile];
+      });
+    }
+
+    fetchSupabaseProfiles();
     
     return {
       id: createdUserId,

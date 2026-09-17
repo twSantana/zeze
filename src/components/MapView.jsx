@@ -262,12 +262,10 @@ function MarkerClusterer({ properties, hoveredPropertyId, onPropertyClick, theme
     if (hoveredPropertyId) {
       const marker = markersMapRef.current.get(hoveredPropertyId);
       if (marker) {
-        if (clusterGroupRef.current && typeof clusterGroupRef.current.zoomToShowLayer === 'function') {
-          clusterGroupRef.current.zoomToShowLayer(marker, () => {
-            marker.openPopup();
-          });
-        } else {
+        try {
           marker.openPopup();
+        } catch (e) {
+          // Ignora se o pino estiver agrupado em um cluster sem dar zoom
         }
       }
     } else {
